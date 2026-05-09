@@ -1,3 +1,87 @@
+// ── AUTH ─────────────────────────────────────────────────────────────────────
+
+function getUser() {
+  return JSON.parse(localStorage.getItem('pawfinder_user') || 'null');
+}
+
+function saveUser(user) {
+  localStorage.setItem('pawfinder_user', JSON.stringify(user));
+}
+
+function logout() {
+  localStorage.removeItem('pawfinder_user');
+  window.location.href = 'index.html';
+}
+
+// Called by Google Identity Services after real Google login
+function handleGoogleLogin(response) {
+  const payload = JSON.parse(atob(response.credential.split('.')[1]));
+  saveUser({
+    name: payload.name,
+    email: payload.email,
+    picture: payload.picture,
+    demo: false,
+  });
+  const returnTo = sessionStorage.getItem('pawfinder_return') || 'index.html';
+  sessionStorage.removeItem('pawfinder_return');
+  window.location.href = returnTo;
+}
+
+// Demo login — simulates a logged-in Google account for class demos
+function demoLogin() {
+  saveUser({
+    name: 'Ryan (Demo)',
+    email: 'ryanpang333@gmail.com',
+    picture: 'https://ui-avatars.com/api/?name=Ryan&background=ff7043&color=fff&size=64',
+    demo: true,
+  });
+  const returnTo = sessionStorage.getItem('pawfinder_return') || 'index.html';
+  sessionStorage.removeItem('pawfinder_return');
+  window.location.href = returnTo;
+}
+
+// Inject the user avatar + name (or login button) into nav
+function updateNavUser() {
+  const el = document.getElementById('nav-user');
+  if (!el) return;
+  const user = getUser();
+  if (user) {
+    el.innerHTML = `
+      <img src="${user.picture}" alt="${user.name}" title="${user.email}">
+      <span>${user.name.split(' ')[0]}</span>
+      <button class="btn-logout" onclick="logout()">Log out</button>
+    `;
+  } else {
+    el.innerHTML = `<a class="btn-login" href="login.html">Sign in with Google</a>`;
+  }
+}
+
+// Redirect to login if not signed in; remember where to come back to
+function requireLogin() {
+  if (!getUser()) {
+    sessionStorage.setItem('pawfinder_return', window.location.pathname.split('/').pop());
+    window.location.href = 'login.html';
+  }
+}
+
+// Show a "must be logged in" banner and hide the form
+function gateForm(formId, bannerId) {
+  const user = getUser();
+  const form = document.getElementById(formId);
+  const banner = document.getElementById(bannerId);
+  if (!form || !banner) return;
+  if (!user) {
+    form.style.display = 'none';
+    banner.style.display = 'block';
+  } else {
+    // Pre-fill owner / finder name from Google account
+    const nameField = form.querySelector('[name="ownerName"], [name="finderName"]');
+    if (nameField && !nameField.value) nameField.value = user.name.replace(' (Demo)', '');
+  }
+}
+
+// ── STORAGE ──────────────────────────────────────────────────────────────────
+
 // Storage helpers
 function getPets() {
   return JSON.parse(localStorage.getItem('pawfinder_pets') || '[]');
@@ -264,10 +348,14 @@ function initMap() {
 
 // Wire up event listeners on page load
 document.addEventListener('DOMContentLoaded', () => {
+  updateNavUser();
   loadHomePets();
   loadCounter();
   loadBrowsePets();
   initMap();
+
+  gateForm('lost-form', 'login-required-lost');
+  gateForm('found-form', 'login-required-found');
 
   initLocationPicker('location-picker-lost', 'lat-lost', 'lng-lost', 'pin-status-lost');
   initLocationPicker('location-picker-found', 'lat-found', 'lng-found', 'pin-status-found');
