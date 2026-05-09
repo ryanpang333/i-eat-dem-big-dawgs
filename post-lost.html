@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Post a Lost Pet — Paw Finder</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+</head>
+<body>
+
+<nav>
+  <a class="logo" href="index.html">🐾 Paw Finder</a>
+  <ul>
+    <li><a href="index.html">Home</a></li>
+    <li><a href="post-lost.html">Lost a Pet</a></li>
+    <li><a href="found-pet.html">Found a Pet</a></li>
+    <li><a href="browse.html">Browse</a></li>
+    <li><a href="tips.html">Tips</a></li>
+    <li><a href="success-stories.html">Success Stories</a></li>
+    <li><a href="map.html">Map</a></li>
+    <li><a href="about.html">About</a></li>
+    <li><a href="contact.html">Contact</a></li>
+  </ul>
+</nav>
+
+<div class="page-header">
+  <h1>🔴 Post a Lost Pet</h1>
+  <p>Fill in the details below so your neighbours can help find your pet.</p>
+</div>
+
+<div class="section">
+  <form id="lost-form">
+    <div class="form-section-title">Owner Information</div>
+
+    <div class="form-group">
+      <label for="ownerName">Your Name</label>
+      <input type="text" id="ownerName" name="ownerName" placeholder="e.g. Ryan" required>
+    </div>
+
+    <div class="form-group">
+      <label for="phone">Phone Number</label>
+      <input type="tel" id="phone" name="phone" placeholder="e.g. 555-123-4567" required>
+    </div>
+
+    <div class="form-section-title">Pet Information</div>
+
+    <div class="form-group">
+      <label for="petName">Pet's Name</label>
+      <input type="text" id="petName" name="petName" placeholder="e.g. Max" required>
+    </div>
+
+    <div class="form-group">
+      <label for="animal">Type of Animal</label>
+      <select id="animal" name="animal" required>
+        <option value="">Select animal type</option>
+        <option>Dog</option>
+        <option>Cat</option>
+        <option>Rabbit</option>
+        <option>Bird</option>
+        <option>Hamster</option>
+        <option>Other</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="breed">Breed (optional)</label>
+      <input type="text" id="breed" name="breed" placeholder="e.g. Golden Retriever">
+    </div>
+
+    <div class="form-group">
+      <label for="color">Color / Markings</label>
+      <input type="text" id="color" name="color" placeholder="e.g. Golden with white paws" required>
+    </div>
+
+    <div class="form-group">
+      <label for="size">Size</label>
+      <select id="size" name="size" required>
+        <option value="">Select size</option>
+        <option>Small</option>
+        <option>Medium</option>
+        <option>Large</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="photo">Photo of Pet</label>
+      <input type="file" id="photo" name="photo" accept="image/*">
+    </div>
+
+    <div class="form-group">
+      <label for="special">Any Special Features (optional)</label>
+      <input type="text" id="special" name="special" placeholder="e.g. Missing left eye, wears a red collar">
+    </div>
+
+    <div class="form-section-title">Missing Details</div>
+
+    <div class="form-group">
+      <label for="location">Describe the Last Seen Location</label>
+      <input type="text" id="location" name="location" placeholder="e.g. Corner of Maple St and Oak Ave" required>
+    </div>
+
+    <div class="form-group">
+      <label>📍 Pin the Exact Spot on the Map</label>
+      <p style="font-size:0.85rem;color:#666;margin-bottom:8px;">Click anywhere on the map to drop a pin. The map will try to start near your location.</p>
+      <div id="location-picker-lost" style="height:300px;border-radius:10px;border:2px solid #ddd;margin-bottom:8px;"></div>
+      <input type="hidden" id="lat-lost" name="lat">
+      <input type="hidden" id="lng-lost" name="lng">
+      <p id="pin-status-lost" style="font-size:0.85rem;color:#888;">No location selected yet.</p>
+    </div>
+
+    <div class="form-group">
+      <label for="date">Date It Went Missing</label>
+      <input type="date" id="date" name="date" required>
+    </div>
+
+    <div class="form-section-title">Reward</div>
+
+    <div class="form-group">
+      <label>Are you offering a reward?</label>
+      <div class="radio-group">
+        <label><input type="radio" name="reward" value="yes"> Yes</label>
+        <label><input type="radio" name="reward" value="no" checked> No</label>
+      </div>
+    </div>
+
+    <button type="submit" class="submit-btn">Post Lost Pet Notice</button>
+
+    <div class="success-message" id="success-lost">
+      ✅ Your lost pet notice has been posted! <a href="map.html" style="color:#2e7d32;">See it on the map →</a>
+    </div>
+  </form>
+</div>
+
+<footer>
+  <p>© 2026 Paw Finder — Made by Ryan | <a href="contact.html" style="color:#ffb300;">Contact Us</a></p>
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
