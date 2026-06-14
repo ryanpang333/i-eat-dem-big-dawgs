@@ -1,65 +1,3 @@
-// ── AUTH ─────────────────────────────────────────────────────────────────────
-
-async function getUser() {
-  if (DB_READY) {
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    return session?.user ?? null;
-  }
-  return JSON.parse(localStorage.getItem('pawfinder_user') || 'null');
-}
-
-
-async function logout() {
-  if (DB_READY) await supabaseClient.auth.signOut();
-  else localStorage.removeItem('pawfinder_user');
-  window.location.href = 'index.html';
-}
-
-function demoLogin() {
-  localStorage.setItem('pawfinder_user', JSON.stringify({
-    name: 'Ryan (Demo)', email: 'ryanpang333@gmail.com',
-    picture: 'https://ui-avatars.com/api/?name=Ryan&background=f97316&color=fff&size=64',
-    demo: true,
-  }));
-  const returnTo = sessionStorage.getItem('pawfinder_return') || 'index.html';
-  sessionStorage.removeItem('pawfinder_return');
-  window.location.href = returnTo;
-}
-
-async function updateNavUser() {
-  const el = document.getElementById('nav-user');
-  if (!el) return;
-  const user = await getUser();
-  if (user) {
-    const name = user.user_metadata?.name || user.name || 'User';
-    const picture = user.user_metadata?.avatar_url || user.picture ||
-      `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=f97316&color=fff&size=64`;
-    const firstName = name.replace(' (Demo)', '').split(' ')[0];
-    el.innerHTML = `
-      <img src="${picture}" alt="${firstName}">
-      <span>${firstName}</span>
-      <button class="btn-logout" onclick="logout()">Log out</button>
-    `;
-  } else {
-    el.innerHTML = `<a class="btn-login" href="login.html">Sign in</a>`;
-  }
-}
-
-async function gateForm(formId, bannerId) {
-  const user = await getUser();
-  const form = document.getElementById(formId);
-  const banner = document.getElementById(bannerId);
-  if (!form || !banner) return;
-  if (!user) {
-    form.style.display = 'none';
-    banner.style.display = 'block';
-  } else {
-    const name = user.user_metadata?.name || user.name || '';
-    const nameField = form.querySelector('[name="ownerName"], [name="finderName"]');
-    if (nameField && !nameField.value) nameField.value = name.replace(' (Demo)', '');
-  }
-}
-
 // ── DATA ─────────────────────────────────────────────────────────────────────
 
 async function getPets() {
@@ -422,7 +360,6 @@ async function submitLostForm(e) {
         const r = new FileReader(); r.onload = ev => res(ev.target.result); r.readAsDataURL(photoFile);
       });
     }
-    const user = await getUser();
     const locParts = [form.location?.value, form.state?.value, form.country?.value].filter(Boolean);
     const timeSeen = form.time_seen?.value;
     await savePet({
@@ -434,7 +371,6 @@ async function submitLostForm(e) {
       special: form.special.value,
       reward: form.reward.value === 'yes',
       lat: parseFloat(form.lat.value) || null, lng: parseFloat(form.lng.value) || null,
-      user_id: user?.id || null,
     });
     form.reset();
     document.getElementById('pin-status-lost').textContent = 'No location selected yet.';
@@ -464,7 +400,6 @@ async function submitFoundForm(e) {
         const r = new FileReader(); r.onload = ev => res(ev.target.result); r.readAsDataURL(photoFile);
       });
     }
-    const user = await getUser();
     const locParts = [form.location?.value, form.state?.value, form.country?.value].filter(Boolean);
     const timeSeen = form.time_seen?.value;
     await savePet({
@@ -476,7 +411,6 @@ async function submitFoundForm(e) {
       special: form.special.value,
       reward: false,
       lat: parseFloat(form.lat.value) || null, lng: parseFloat(form.lng.value) || null,
-      user_id: user?.id || null,
     });
     form.reset();
     document.getElementById('pin-status-found').textContent = 'No location selected yet.';
@@ -595,14 +529,10 @@ function subscribeToNewPets() {
 // ── INIT ─────────────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', async () => {
-  await updateNavUser();
   loadCounter();
   await loadHomePets();
   await loadBrowsePets();
   await initMap();
-
-  await gateForm('lost-form', 'login-required-lost');
-  await gateForm('found-form', 'login-required-found');
 
   initLocationPicker('location-picker-lost', 'lat-lost', 'lng-lost', 'pin-status-lost');
   initLocationPicker('location-picker-found', 'lat-found', 'lng-found', 'pin-status-found');
