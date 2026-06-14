@@ -787,6 +787,18 @@ footer a {
   color: #ea580c;
 }
 
+/* DATE + TIME ROW */
+.when-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.when-row .form-group {
+  flex: 1;
+  min-width: 140px;
+}
+
 /* PHOTO BUTTONS */
 .photo-btns {
   display: flex;

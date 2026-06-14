@@ -97,11 +97,43 @@
       <input type="text" id="special" name="special" placeholder="e.g. Wearing a blue collar, no tags">
     </div>
 
-    <div class="form-section-title">Where & When</div>
+    <div class="form-section-title">📍 Where You Found It</div>
 
     <div class="form-group">
-      <label for="location">Describe Where You Found the Pet</label>
-      <input type="text" id="location" name="location" placeholder="e.g. Near the park on Elm Street" required>
+      <label for="country">Country <span style="color:#1b5e20">*</span></label>
+      <select id="country" name="country" required>
+        <option value="">Select country...</option>
+        <option>Argentina</option><option>Australia</option><option>Austria</option>
+        <option>Bangladesh</option><option>Belgium</option><option>Brazil</option>
+        <option>Canada</option><option>Chile</option><option>China</option>
+        <option>Colombia</option><option>Czech Republic</option><option>Denmark</option>
+        <option>Egypt</option><option>Ethiopia</option><option>Finland</option>
+        <option>France</option><option>Germany</option><option>Ghana</option>
+        <option>Greece</option><option>Hungary</option><option>India</option>
+        <option>Indonesia</option><option>Ireland</option><option>Israel</option>
+        <option>Italy</option><option>Japan</option><option>Kenya</option>
+        <option>Malaysia</option><option>Mexico</option><option>Morocco</option>
+        <option>Netherlands</option><option>New Zealand</option><option>Nigeria</option>
+        <option>Norway</option><option>Pakistan</option><option>Peru</option>
+        <option>Philippines</option><option>Poland</option><option>Portugal</option>
+        <option>Romania</option><option>Russia</option><option>Saudi Arabia</option>
+        <option>Singapore</option><option>South Africa</option><option>South Korea</option>
+        <option>Spain</option><option>Sri Lanka</option><option>Sweden</option>
+        <option>Switzerland</option><option>Taiwan</option><option>Thailand</option>
+        <option>Turkey</option><option>Ukraine</option><option>United Arab Emirates</option>
+        <option>United Kingdom</option><option>United States</option>
+        <option>Vietnam</option><option>Other</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="state">State / Province / Region</label>
+      <input type="text" id="state" name="state" placeholder="e.g. Ontario, California, Yorkshire">
+    </div>
+
+    <div class="form-group">
+      <label for="location">Street / Area / Landmark</label>
+      <input type="text" id="location" name="location" placeholder="e.g. Near the park on Elm Street">
     </div>
 
     <div class="form-group">
@@ -113,9 +145,15 @@
       <p id="pin-status-found" style="font-size:0.85rem;color:#888;">No location selected yet.</p>
     </div>
 
-    <div class="form-group">
-      <label for="date">Date You Found the Pet</label>
-      <input type="date" id="date" name="date" required>
+    <div class="when-row">
+      <div class="form-group">
+        <label for="date">Date Found <span style="color:#1b5e20">*</span></label>
+        <input type="date" id="date" name="date" required>
+      </div>
+      <div class="form-group">
+        <label for="time-seen">Time Found</label>
+        <input type="time" id="time-seen" name="time_seen">
+      </div>
     </div>
 
     <button type="submit" class="submit-btn">Post Found Pet Notice</button>

@@ -423,11 +423,15 @@ async function submitLostForm(e) {
       });
     }
     const user = await getUser();
+    const locParts = [form.location?.value, form.state?.value, form.country?.value].filter(Boolean);
+    const timeSeen = form.time_seen?.value;
     await savePet({
       type: 'lost', owner_name: form.ownerName.value, phone: form.phone.value,
       pet_name: form.petName.value, animal: form.animal.value, breed: form.breed.value,
       color: form.color.value, size: form.size.value, photo_url: photoUrl,
-      location: form.location.value, date: form.date.value, special: form.special.value,
+      location: locParts.join(', ') || 'Unknown',
+      date: form.date.value + (timeSeen ? ' at ' + timeSeen : ''),
+      special: form.special.value,
       reward: form.reward.value === 'yes',
       lat: parseFloat(form.lat.value) || null, lng: parseFloat(form.lng.value) || null,
       user_id: user?.id || null,
@@ -461,11 +465,15 @@ async function submitFoundForm(e) {
       });
     }
     const user = await getUser();
+    const locParts = [form.location?.value, form.state?.value, form.country?.value].filter(Boolean);
+    const timeSeen = form.time_seen?.value;
     await savePet({
       type: 'found', owner_name: form.finderName.value, phone: form.phone.value,
       pet_name: 'Unknown', animal: form.animal.value, breed: '',
       color: form.color.value, size: form.size.value, photo_url: photoUrl,
-      location: form.location.value, date: form.date.value, special: form.special.value,
+      location: locParts.join(', ') || 'Unknown',
+      date: form.date.value + (timeSeen ? ' at ' + timeSeen : ''),
+      special: form.special.value,
       reward: false,
       lat: parseFloat(form.lat.value) || null, lng: parseFloat(form.lng.value) || null,
       user_id: user?.id || null,
