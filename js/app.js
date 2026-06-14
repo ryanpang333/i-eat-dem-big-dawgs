@@ -2,37 +2,23 @@
 
 async function getUser() {
   if (DB_READY) {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await supabaseClient.auth.getSession();
     return session?.user ?? null;
   }
   return JSON.parse(localStorage.getItem('pawfinder_user') || 'null');
 }
 
-async function loginWithGoogle() {
-  if (!DB_READY) {
-    alert('Supabase is not set up yet. Use Demo Login instead.');
-    return;
-  }
-  await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: { redirectTo: window.location.origin + '/index.html' }
-  });
-}
 
 async function logout() {
-  if (DB_READY) {
-    await supabase.auth.signOut();
-  } else {
-    localStorage.removeItem('pawfinder_user');
-  }
+  if (DB_READY) await supabaseClient.auth.signOut();
+  else localStorage.removeItem('pawfinder_user');
   window.location.href = 'index.html';
 }
 
 function demoLogin() {
   localStorage.setItem('pawfinder_user', JSON.stringify({
-    name: 'Ryan (Demo)',
-    email: 'ryanpang333@gmail.com',
-    picture: 'https://ui-avatars.com/api/?name=Ryan&background=7c3aed&color=fff&size=64',
+    name: 'Ryan (Demo)', email: 'ryanpang333@gmail.com',
+    picture: 'https://ui-avatars.com/api/?name=Ryan&background=f97316&color=fff&size=64',
     demo: true,
   }));
   const returnTo = sessionStorage.getItem('pawfinder_return') || 'index.html';
@@ -44,11 +30,10 @@ async function updateNavUser() {
   const el = document.getElementById('nav-user');
   if (!el) return;
   const user = await getUser();
-
   if (user) {
     const name = user.user_metadata?.name || user.name || 'User';
     const picture = user.user_metadata?.avatar_url || user.picture ||
-      `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=7c3aed&color=fff&size=64`;
+      `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=f97316&color=fff&size=64`;
     const firstName = name.replace(' (Demo)', '').split(' ')[0];
     el.innerHTML = `
       <img src="${picture}" alt="${firstName}">
@@ -79,7 +64,7 @@ async function gateForm(formId, bannerId) {
 
 async function getPets() {
   if (DB_READY) {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('pets')
       .select('*')
       .order('created_at', { ascending: false });
@@ -91,7 +76,7 @@ async function getPets() {
 
 async function savePet(pet) {
   if (DB_READY) {
-    const { error } = await supabase.from('pets').insert([pet]);
+    const { error } = await supabaseClient.from('pets').insert([pet]);
     if (error) throw error;
   } else {
     const pets = JSON.parse(localStorage.getItem('pawfinder_pets') || '[]');
@@ -104,38 +89,215 @@ async function uploadPhoto(file) {
   if (!DB_READY || !file) return null;
   const ext = file.name.split('.').pop();
   const path = `${Date.now()}.${ext}`;
-  const { data, error } = await supabase.storage.from('pet-photos').upload(path, file);
+  const { data, error } = await supabaseClient.storage.from('pet-photos').upload(path, file);
   if (error) { console.error(error); return null; }
-  const { data: { publicUrl } } = supabase.storage.from('pet-photos').getPublicUrl(data.path);
+  const { data: { publicUrl } } = supabaseClient.storage.from('pet-photos').getPublicUrl(data.path);
   return publicUrl;
 }
 
-function getCounter() {
-  return parseInt(localStorage.getItem('pawfinder_reunited') || '10');
+async function loadCounter() {
+  const el = document.getElementById('reunited-count');
+  if (!el) return;
+  if (DB_READY) {
+    const { count, error } = await supabaseClient
+      .from('pets').select('id', { count: 'exact', head: true }).eq('status', 'reunited');
+    el.textContent = error ? (localStorage.getItem('pawfinder_reunited') || '10') : (count ?? 0);
+  } else {
+    el.textContent = localStorage.getItem('pawfinder_reunited') || '10';
+  }
+}
+
+// ── PET STORE ────────────────────────────────────────────────────────────────
+
+const petStore = new Map();
+let _seq = 0;
+
+function escHtml(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
 // ── RENDER ───────────────────────────────────────────────────────────────────
 
 function renderCard(pet) {
+  const key = pet.id ? String(pet.id) : `local-${++_seq}`;
+  petStore.set(key, pet);
+
   const imgSrc = pet.photo_url || pet.photo || 'https://placehold.co/300x150?text=No+Photo';
   const label = pet.type === 'lost' ? 'LOST' : 'FOUND';
   const locationLabel = pet.type === 'lost' ? 'Last seen' : 'Found at';
+  const isReunited = pet.status === 'reunited';
+  const phoneSafe = escHtml(pet.phone || '');
+  const name = escHtml(pet.pet_name || pet.petName || 'Unknown');
+
   return `
-    <div class="card">
-      <img src="${imgSrc}" alt="${pet.pet_name || pet.petName || 'Pet'}">
+    <div class="card${isReunited ? ' card-reunited' : ''}">
+      ${isReunited ? '<div class="reunited-banner">🎉 REUNITED!</div>' : ''}
+      <img src="${imgSrc}" alt="${name}">
       <span class="badge-${pet.type}">${label}</span>
-      <h3>${pet.pet_name || pet.petName || 'Unknown'}</h3>
-      <p><strong>Animal:</strong> ${pet.animal} ${pet.breed ? '— ' + pet.breed : ''}</p>
-      <p><strong>Color:</strong> ${pet.color}</p>
-      <p><strong>Size:</strong> ${pet.size}</p>
-      <p><strong>${locationLabel}:</strong> ${pet.location}</p>
-      <p><strong>Date:</strong> ${pet.date}</p>
-      ${pet.special ? `<p><strong>Special:</strong> ${pet.special}</p>` : ''}
+      <h3>${name}</h3>
+      <p><strong>Animal:</strong> ${escHtml(pet.animal)} ${pet.breed ? '— ' + escHtml(pet.breed) : ''}</p>
+      <p><strong>Color:</strong> ${escHtml(pet.color)}</p>
+      <p><strong>Size:</strong> ${escHtml(pet.size)}</p>
+      <p><strong>${locationLabel}:</strong> ${escHtml(pet.location)}</p>
+      <p><strong>Date:</strong> ${escHtml(pet.date)}</p>
+      ${pet.special ? `<p><strong>Special:</strong> ${escHtml(pet.special)}</p>` : ''}
       ${pet.reward === true || pet.reward === 'yes' ? `<p style="color:#c62828;font-weight:bold;">Reward offered!</p>` : ''}
-      <p style="margin-top:8px;"><strong>Contact:</strong> ${pet.owner_name || pet.ownerName} — ${pet.phone}</p>
-      ${pet.lat && pet.lng ? `<a href="map.html" style="display:inline-block;margin-top:8px;font-size:0.8rem;color:#a855f7;">📍 See on map</a>` : ''}
+      <p style="margin-top:8px;"><strong>Contact:</strong> ${escHtml(pet.owner_name || pet.ownerName)} — ${phoneSafe}</p>
+      ${pet.lat && pet.lng ? `<a href="map.html" style="display:inline-block;margin-top:8px;font-size:0.8rem;color:#f97316;">📍 See on map</a>` : ''}
+      <div class="card-actions">
+        <button class="action-btn" onclick="copyPhone('${phoneSafe}',this)">📋 Copy Phone</button>
+        <button class="action-btn" onclick="sharePost('${key}')">🔗 Share</button>
+        <button class="action-btn" onclick="printFlyer('${key}')">🖨️ Print Flyer</button>
+        ${!isReunited && pet.id ? `<button class="action-btn btn-reunited" onclick="markReunited('${key}',this)">🎉 Reunited!</button>` : ''}
+      </div>
+      <div class="tips-section">
+        <div class="tips-input-row">
+          <input class="tip-input" id="tip-${key}" type="text" placeholder="Leave a tip or sighting...">
+          <button class="action-btn" onclick="submitTip('${key}')">Send</button>
+        </div>
+        <div class="tips-list" id="tips-list-${key}"></div>
+      </div>
     </div>
   `;
+}
+
+// ── CARD ACTIONS ─────────────────────────────────────────────────────────────
+
+function copyPhone(phone, btn) {
+  navigator.clipboard.writeText(phone).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✅ Copied!';
+    setTimeout(() => btn.textContent = orig, 2000);
+  });
+}
+
+function sharePost(key) {
+  const pet = petStore.get(key);
+  if (!pet) return;
+  const name = pet.pet_name || pet.petName || 'Unknown';
+  const text = `${pet.type === 'lost' ? '🔴 LOST' : '🟢 FOUND'}: ${name} (${pet.animal}) near ${pet.location}. Date: ${pet.date}. Contact: ${pet.phone}`;
+  if (navigator.share) {
+    navigator.share({ title: 'Paw Finder', text });
+  } else {
+    navigator.clipboard.writeText(text).then(() => alert('Copied to clipboard!'));
+  }
+}
+
+function printFlyer(key) {
+  const pet = petStore.get(key);
+  if (!pet) return;
+  const color = pet.type === 'lost' ? '#c62828' : '#1b5e20';
+  const img = (pet.photo_url || pet.photo) ? `<img src="${pet.photo_url || pet.photo}" style="max-width:280px;border-radius:10px;margin:16px auto;display:block;">` : '';
+  const w = window.open('', '_blank');
+  w.document.write(`<!DOCTYPE html><html><head><title>Paw Finder Flyer</title><style>
+    body{font-family:Arial,sans-serif;text-align:center;padding:40px;max-width:520px;margin:0 auto}
+    h1{font-size:2.5rem;color:${color};margin:0}
+    .name{font-size:2rem;font-weight:bold;margin:12px 0}
+    .info{font-size:1.1rem;margin:6px 0;color:#333}
+    .phone{font-size:2rem;font-weight:bold;color:#f97316;margin:24px 0;padding:14px;border:3px solid #f97316;border-radius:8px}
+    .reward{color:#c62828;font-weight:bold;font-size:1.3rem;margin:10px 0}
+    footer{color:#aaa;font-size:0.8rem;margin-top:28px}
+  </style></head><body>
+  <h1>${pet.type === 'lost' ? '🔴 LOST PET' : '🟢 FOUND PET'}</h1>
+  <div class="name">${escHtml(pet.pet_name || pet.petName || 'Unknown')}</div>
+  ${img}
+  <div class="info"><b>Animal:</b> ${escHtml(pet.animal)}${pet.breed ? ' — ' + escHtml(pet.breed) : ''}</div>
+  <div class="info"><b>Colour:</b> ${escHtml(pet.color)} · <b>Size:</b> ${escHtml(pet.size)}</div>
+  <div class="info"><b>${pet.type === 'lost' ? 'Last seen' : 'Found at'}:</b> ${escHtml(pet.location)}</div>
+  <div class="info"><b>Date:</b> ${escHtml(pet.date)}</div>
+  ${pet.special ? `<div class="info"><b>Special marks:</b> ${escHtml(pet.special)}</div>` : ''}
+  ${pet.reward === true || pet.reward === 'yes' ? '<div class="reward">💰 REWARD OFFERED</div>' : ''}
+  <div class="phone">📞 ${escHtml(pet.phone)}</div>
+  <div class="info">Contact: ${escHtml(pet.owner_name || pet.ownerName)}</div>
+  <footer>Posted on 🐾 Paw Finder</footer>
+  <script>window.onload=function(){window.print()}<\/script>
+  </body></html>`);
+  w.document.close();
+}
+
+async function markReunited(key, btn) {
+  if (!confirm('Mark this pet as reunited? 🎉')) return;
+  const pet = petStore.get(key);
+  if (DB_READY && pet?.id) {
+    const { error } = await supabaseClient.from('pets').update({ status: 'reunited' }).eq('id', pet.id);
+    if (error) { alert('Could not update: ' + error.message); return; }
+  }
+  const card = btn.closest('.card');
+  card.classList.add('card-reunited');
+  if (!card.querySelector('.reunited-banner')) {
+    card.insertAdjacentHTML('afterbegin', '<div class="reunited-banner">🎉 REUNITED!</div>');
+  }
+  btn.remove();
+  const stored = parseInt(localStorage.getItem('pawfinder_reunited') || '10') + 1;
+  localStorage.setItem('pawfinder_reunited', stored);
+  const el = document.getElementById('reunited-count');
+  if (el) el.textContent = stored;
+}
+
+// ── TIPS ─────────────────────────────────────────────────────────────────────
+
+async function submitTip(key) {
+  const input = document.getElementById(`tip-${key}`);
+  const text = input?.value.trim();
+  if (!text) return;
+  const pet = petStore.get(key);
+  const petId = pet?.id || key;
+  const tip = { pet_id: petId, message: text, created_at: new Date().toISOString() };
+
+  if (DB_READY) {
+    const { error } = await supabaseClient.from('tips').insert([tip]);
+    if (error) {
+      const tips = JSON.parse(localStorage.getItem(`tips_${petId}`) || '[]');
+      tips.push(tip);
+      localStorage.setItem(`tips_${petId}`, JSON.stringify(tips));
+    }
+  } else {
+    const tips = JSON.parse(localStorage.getItem(`tips_${petId}`) || '[]');
+    tips.push(tip);
+    localStorage.setItem(`tips_${petId}`, JSON.stringify(tips));
+  }
+  input.value = '';
+  loadTips(key);
+}
+
+async function loadTips(key) {
+  const list = document.getElementById(`tips-list-${key}`);
+  if (!list) return;
+  const pet = petStore.get(key);
+  const petId = pet?.id || key;
+  let tips = [];
+
+  if (DB_READY) {
+    const { data } = await supabaseClient.from('tips').select('*').eq('pet_id', petId).order('created_at');
+    tips = data || [];
+  }
+  if (!tips.length) {
+    tips = JSON.parse(localStorage.getItem(`tips_${petId}`) || '[]');
+  }
+  list.innerHTML = tips.map(t => `<div class="tip-item">💬 ${escHtml(t.message)}</div>`).join('');
+}
+
+// ── DISTANCE ─────────────────────────────────────────────────────────────────
+
+function haversine(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const toRad = x => x * Math.PI / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+let _userLoc = null;
+function getUserLocation() {
+  if (_userLoc) return Promise.resolve(_userLoc);
+  return new Promise((res, rej) => {
+    if (!navigator.geolocation) { rej('No geolocation'); return; }
+    navigator.geolocation.getCurrentPosition(
+      p => { _userLoc = { lat: p.coords.latitude, lng: p.coords.longitude }; res(_userLoc); },
+      rej
+    );
+  });
 }
 
 // ── PAGES ────────────────────────────────────────────────────────────────────
@@ -145,16 +307,12 @@ async function loadHomePets() {
   if (!container) return;
   container.innerHTML = '<p class="empty-state">Loading...</p>';
   const pets = (await getPets()).filter(p => p.type === 'lost').slice(0, 3);
-  if (pets.length === 0) {
+  if (!pets.length) {
     container.innerHTML = '<p class="empty-state">No lost pets posted yet. Be the first!</p>';
     return;
   }
   container.innerHTML = pets.map(renderCard).join('');
-}
-
-function loadCounter() {
-  const el = document.getElementById('reunited-count');
-  if (el) el.textContent = getCounter();
+  pets.filter(p => p.id).forEach(p => loadTips(String(p.id)));
 }
 
 async function loadBrowsePets() {
@@ -162,13 +320,13 @@ async function loadBrowsePets() {
   if (!container) return;
   const filter = document.getElementById('filter-type');
   const search = document.getElementById('search-input');
+  const nearMe = document.getElementById('near-me');
+  const radiusEl = document.getElementById('radius-km');
 
   container.innerHTML = '<p class="empty-state">Loading...</p>';
   let pets = await getPets();
 
-  if (filter && filter.value !== 'all') {
-    pets = pets.filter(p => p.type === filter.value);
-  }
+  if (filter && filter.value !== 'all') pets = pets.filter(p => p.type === filter.value);
   if (search && search.value.trim()) {
     const q = search.value.toLowerCase();
     pets = pets.filter(p =>
@@ -177,11 +335,51 @@ async function loadBrowsePets() {
       p.location.toLowerCase().includes(q)
     );
   }
-  if (pets.length === 0) {
+  if (nearMe && nearMe.checked) {
+    try {
+      const loc = await getUserLocation();
+      const km = parseFloat(radiusEl?.value) || 10;
+      pets = pets.filter(p => p.lat && p.lng && haversine(loc.lat, loc.lng, p.lat, p.lng) <= km);
+    } catch {
+      alert('Could not get your location. Please allow location access.');
+      nearMe.checked = false;
+    }
+  }
+
+  if (!pets.length) {
     container.innerHTML = '<p class="empty-state">No pets found. Try adjusting your search.</p>';
     return;
   }
   container.innerHTML = pets.map(renderCard).join('');
+  pets.filter(p => p.id).forEach(p => loadTips(String(p.id)));
+}
+
+// ── PHOTO INPUT ──────────────────────────────────────────────────────────────
+
+function setupPhotoInput(captureId, galleryId, previewId) {
+  const captureInput = document.getElementById(captureId);
+  const galleryInput = document.getElementById(galleryId);
+
+  const showPreview = (file) => {
+    const preview = document.getElementById(previewId);
+    if (!preview || !file) return;
+    const url = URL.createObjectURL(file);
+    preview.innerHTML = `<img src="${url}" style="max-width:100%;max-height:160px;object-fit:cover;border-radius:8px;margin-top:8px;border:2px solid #f97316;">`;
+  };
+
+  if (galleryInput) {
+    galleryInput.addEventListener('change', () => showPreview(galleryInput.files[0]));
+  }
+  if (captureInput) {
+    captureInput.addEventListener('change', () => {
+      const file = captureInput.files[0];
+      if (!file || !galleryInput) return;
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      galleryInput.files = dt.files;
+      showPreview(file);
+    });
+  }
 }
 
 // ── FORMS ────────────────────────────────────────────────────────────────────
@@ -195,11 +393,11 @@ function initLocationPicker(mapDivId, latInputId, lngInputId, statusId) {
   }).addTo(pickerMap);
   let marker = null;
   if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition((pos) => {
+    navigator.geolocation.getCurrentPosition(pos => {
       pickerMap.setView([pos.coords.latitude, pos.coords.longitude], 13);
     });
   }
-  pickerMap.on('click', (e) => {
+  pickerMap.on('click', e => {
     const { lat, lng } = e.latlng;
     if (marker) marker.setLatLng([lat, lng]);
     else marker = L.marker([lat, lng]).addTo(pickerMap);
@@ -207,7 +405,7 @@ function initLocationPicker(mapDivId, latInputId, lngInputId, statusId) {
     document.getElementById(lngInputId).value = lng.toFixed(6);
     const status = document.getElementById(statusId);
     status.textContent = `📍 Pin dropped! (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
-    status.style.color = '#a855f7';
+    status.style.color = '#f97316';
   });
 }
 
@@ -215,55 +413,37 @@ async function submitLostForm(e) {
   e.preventDefault();
   const form = e.target;
   const btn = form.querySelector('.submit-btn');
-  btn.textContent = 'Posting...';
-  btn.disabled = true;
-
+  btn.textContent = 'Posting...'; btn.disabled = true;
   try {
     const photoFile = form.photo.files[0];
     let photoUrl = null;
     if (photoFile) {
-      if (DB_READY) {
-        photoUrl = await uploadPhoto(photoFile);
-      } else {
-        photoUrl = await new Promise(res => {
-          const r = new FileReader();
-          r.onload = e => res(e.target.result);
-          r.readAsDataURL(photoFile);
-        });
-      }
+      photoUrl = DB_READY ? await uploadPhoto(photoFile) : await new Promise(res => {
+        const r = new FileReader(); r.onload = ev => res(ev.target.result); r.readAsDataURL(photoFile);
+      });
     }
-
     const user = await getUser();
-    const pet = {
-      type: 'lost',
-      owner_name: form.ownerName.value,
-      phone: form.phone.value,
-      pet_name: form.petName.value,
-      animal: form.animal.value,
-      breed: form.breed.value,
-      color: form.color.value,
-      size: form.size.value,
-      photo_url: photoUrl,
-      location: form.location.value,
-      date: form.date.value,
-      special: form.special.value,
+    await savePet({
+      type: 'lost', owner_name: form.ownerName.value, phone: form.phone.value,
+      pet_name: form.petName.value, animal: form.animal.value, breed: form.breed.value,
+      color: form.color.value, size: form.size.value, photo_url: photoUrl,
+      location: form.location.value, date: form.date.value, special: form.special.value,
       reward: form.reward.value === 'yes',
-      lat: parseFloat(form.lat.value) || null,
-      lng: parseFloat(form.lng.value) || null,
+      lat: parseFloat(form.lat.value) || null, lng: parseFloat(form.lng.value) || null,
       user_id: user?.id || null,
-    };
-
-    await savePet(pet);
+    });
     form.reset();
     document.getElementById('pin-status-lost').textContent = 'No location selected yet.';
     document.getElementById('pin-status-lost').style.color = '#888';
-    document.getElementById('success-lost').style.display = 'block';
-    setTimeout(() => document.getElementById('success-lost').style.display = 'none', 4000);
+    const prevLost = document.getElementById('photo-preview-lost');
+    if (prevLost) prevLost.innerHTML = '';
+    const s = document.getElementById('success-lost');
+    s.style.display = 'block';
+    setTimeout(() => s.style.display = 'none', 4000);
   } catch (err) {
     alert('Error posting pet: ' + err.message);
   } finally {
-    btn.textContent = 'Post Lost Pet Notice';
-    btn.disabled = false;
+    btn.textContent = 'Post Lost Pet Notice'; btn.disabled = false;
   }
 }
 
@@ -271,119 +451,134 @@ async function submitFoundForm(e) {
   e.preventDefault();
   const form = e.target;
   const btn = form.querySelector('.submit-btn');
-  btn.textContent = 'Posting...';
-  btn.disabled = true;
-
+  btn.textContent = 'Posting...'; btn.disabled = true;
   try {
     const photoFile = form.photo.files[0];
     let photoUrl = null;
     if (photoFile) {
-      if (DB_READY) {
-        photoUrl = await uploadPhoto(photoFile);
-      } else {
-        photoUrl = await new Promise(res => {
-          const r = new FileReader();
-          r.onload = e => res(e.target.result);
-          r.readAsDataURL(photoFile);
-        });
-      }
+      photoUrl = DB_READY ? await uploadPhoto(photoFile) : await new Promise(res => {
+        const r = new FileReader(); r.onload = ev => res(ev.target.result); r.readAsDataURL(photoFile);
+      });
     }
-
     const user = await getUser();
-    const pet = {
-      type: 'found',
-      owner_name: form.finderName.value,
-      phone: form.phone.value,
-      pet_name: 'Unknown',
-      animal: form.animal.value,
-      breed: '',
-      color: form.color.value,
-      size: form.size.value,
-      photo_url: photoUrl,
-      location: form.location.value,
-      date: form.date.value,
-      special: form.special.value,
+    await savePet({
+      type: 'found', owner_name: form.finderName.value, phone: form.phone.value,
+      pet_name: 'Unknown', animal: form.animal.value, breed: '',
+      color: form.color.value, size: form.size.value, photo_url: photoUrl,
+      location: form.location.value, date: form.date.value, special: form.special.value,
       reward: false,
-      lat: parseFloat(form.lat.value) || null,
-      lng: parseFloat(form.lng.value) || null,
+      lat: parseFloat(form.lat.value) || null, lng: parseFloat(form.lng.value) || null,
       user_id: user?.id || null,
-    };
-
-    await savePet(pet);
+    });
     form.reset();
     document.getElementById('pin-status-found').textContent = 'No location selected yet.';
     document.getElementById('pin-status-found').style.color = '#888';
-    document.getElementById('success-found').style.display = 'block';
-    setTimeout(() => document.getElementById('success-found').style.display = 'none', 4000);
+    const prevFound = document.getElementById('photo-preview-found');
+    if (prevFound) prevFound.innerHTML = '';
+    const s = document.getElementById('success-found');
+    s.style.display = 'block';
+    setTimeout(() => s.style.display = 'none', 4000);
   } catch (err) {
     alert('Error posting pet: ' + err.message);
   } finally {
-    btn.textContent = 'Post Found Pet Notice';
-    btn.disabled = false;
+    btn.textContent = 'Post Found Pet Notice'; btn.disabled = false;
   }
 }
 
 function submitContactForm(e) {
-  e.preventDefault();
-  e.target.reset();
-  document.getElementById('success-contact').style.display = 'block';
-  setTimeout(() => document.getElementById('success-contact').style.display = 'none', 4000);
+  e.preventDefault(); e.target.reset();
+  const s = document.getElementById('success-contact');
+  s.style.display = 'block';
+  setTimeout(() => s.style.display = 'none', 4000);
 }
 
 // ── MAP ──────────────────────────────────────────────────────────────────────
 
+let mapInstance = null;
+let mapMarkers = [];
+let heatLayer = null;
+let allMapPets = [];
+
 async function initMap() {
   if (!document.getElementById('map')) return;
-  const map = L.map('map').setView([20, 0], 2);
+  mapInstance = L.map('map').setView([20, 0], 2);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap contributors'
-  }).addTo(map);
+  }).addTo(mapInstance);
 
-  const pets = (await getPets()).filter(p => p.lat && p.lng);
+  allMapPets = (await getPets()).filter(p => p.lat && p.lng);
+  renderMapMarkers();
+
+  const count = document.getElementById('map-pin-count');
+  if (count) count.textContent = allMapPets.length;
+
+  if (DB_READY) {
+    supabaseClient.channel('pets-map').on(
+      'postgres_changes', { event: 'INSERT', schema: 'public', table: 'pets' },
+      async () => {
+        allMapPets = (await getPets()).filter(p => p.lat && p.lng);
+        renderMapMarkers();
+        if (count) count.textContent = allMapPets.length;
+      }
+    ).subscribe();
+  }
+}
+
+function renderMapMarkers() {
+  if (!mapInstance) return;
+  mapMarkers.forEach(m => mapInstance.removeLayer(m));
+  mapMarkers = [];
+  if (heatLayer) { mapInstance.removeLayer(heatLayer); heatLayer = null; }
+
+  const showLost   = document.getElementById('filter-lost')?.checked ?? true;
+  const showFound  = document.getElementById('filter-found')?.checked ?? true;
+  const animalVal  = document.getElementById('map-animal-filter')?.value || 'all';
+  const showHeat   = document.getElementById('toggle-heatmap')?.checked ?? false;
+
+  const filtered = allMapPets.filter(p => {
+    if (p.type === 'lost'  && !showLost)  return false;
+    if (p.type === 'found' && !showFound) return false;
+    if (animalVal !== 'all' && p.animal !== animalVal) return false;
+    return true;
+  });
+
+  if (showHeat && typeof L.heatLayer === 'function') {
+    heatLayer = L.heatLayer(filtered.map(p => [p.lat, p.lng, 1]), { radius: 35, blur: 25, maxZoom: 12 }).addTo(mapInstance);
+    return;
+  }
+
   const bounds = [];
-
-  pets.forEach(pet => {
+  filtered.forEach(pet => {
     bounds.push([pet.lat, pet.lng]);
     const color = pet.type === 'lost' ? '#c62828' : '#1b5e20';
     const imgTag = (pet.photo_url || pet.photo)
-      ? `<img src="${pet.photo_url || pet.photo}" style="width:100%;max-height:100px;object-fit:cover;border-radius:6px;margin-bottom:6px;">`
-      : '';
-    const marker = L.circleMarker([pet.lat, pet.lng], {
+      ? `<img src="${pet.photo_url || pet.photo}" style="width:100%;max-height:100px;object-fit:cover;border-radius:6px;margin-bottom:6px;">` : '';
+    const m = L.circleMarker([pet.lat, pet.lng], {
       color, fillColor: color, fillOpacity: 0.85, radius: 10, weight: 2,
-    }).addTo(map);
-    marker.bindPopup(`
+    }).addTo(mapInstance);
+    m.bindPopup(`
       <div style="min-width:160px;">
         ${imgTag}
-        <strong>${pet.pet_name || pet.petName || 'Unknown'}</strong>
+        <strong>${escHtml(pet.pet_name || pet.petName || 'Unknown')}</strong>
         <span style="background:${color};color:white;font-size:0.7rem;padding:1px 6px;border-radius:10px;margin-left:4px;">${pet.type.toUpperCase()}</span><br>
-        <b>Animal:</b> ${pet.animal}<br>
-        <b>Color:</b> ${pet.color}<br>
-        <b>Location:</b> ${pet.location}<br>
-        <b>Date:</b> ${pet.date}<br>
-        <b>Contact:</b> ${pet.owner_name || pet.ownerName} — ${pet.phone}
+        <b>Animal:</b> ${escHtml(pet.animal)}<br>
+        <b>Color:</b> ${escHtml(pet.color)}<br>
+        <b>Location:</b> ${escHtml(pet.location)}<br>
+        <b>Date:</b> ${escHtml(pet.date)}<br>
+        <b>Contact:</b> ${escHtml(pet.owner_name || pet.ownerName)} — ${escHtml(pet.phone)}
         ${pet.reward === true || pet.reward === 'yes' ? '<br><b style="color:#c62828;">Reward offered!</b>' : ''}
       </div>
     `);
+    mapMarkers.push(m);
   });
-
-  if (bounds.length > 0) map.fitBounds(bounds, { padding: [40, 40], maxZoom: 12 });
-  const count = document.getElementById('map-pin-count');
-  if (count) count.textContent = pets.length;
-
-  // Real-time: refresh map when new pets are added
-  if (DB_READY) {
-    supabase.channel('pets-map').on(
-      'postgres_changes', { event: 'INSERT', schema: 'public', table: 'pets' },
-      () => { map.remove(); initMap(); }
-    ).subscribe();
-  }
+  if (bounds.length) mapInstance.fitBounds(bounds, { padding: [40, 40], maxZoom: 12 });
 }
 
 // ── REALTIME BROWSE ───────────────────────────────────────────────────────────
 
 function subscribeToNewPets() {
   if (!DB_READY || !document.getElementById('browse-pets')) return;
-  supabase.channel('pets-browse').on(
+  supabaseClient.channel('pets-browse').on(
     'postgres_changes', { event: 'INSERT', schema: 'public', table: 'pets' },
     () => loadBrowsePets()
   ).subscribe();
@@ -403,21 +598,31 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   initLocationPicker('location-picker-lost', 'lat-lost', 'lng-lost', 'pin-status-lost');
   initLocationPicker('location-picker-found', 'lat-found', 'lng-found', 'pin-status-found');
+  setupPhotoInput('photo-capture-lost', 'photo', 'photo-preview-lost');
+  setupPhotoInput('photo-capture-found', 'photo', 'photo-preview-found');
 
   subscribeToNewPets();
 
   const lostForm = document.getElementById('lost-form');
   if (lostForm) lostForm.addEventListener('submit', submitLostForm);
-
   const foundForm = document.getElementById('found-form');
   if (foundForm) foundForm.addEventListener('submit', submitFoundForm);
-
   const contactForm = document.getElementById('contact-form');
   if (contactForm) contactForm.addEventListener('submit', submitContactForm);
 
   const filterType = document.getElementById('filter-type');
   if (filterType) filterType.addEventListener('change', loadBrowsePets);
-
   const searchInput = document.getElementById('search-input');
   if (searchInput) searchInput.addEventListener('input', loadBrowsePets);
+
+  const nearMe = document.getElementById('near-me');
+  if (nearMe) nearMe.addEventListener('change', loadBrowsePets);
+  const radiusKm = document.getElementById('radius-km');
+  if (radiusKm) {
+    radiusKm.addEventListener('input', () => {
+      const lbl = document.getElementById('radius-label');
+      if (lbl) lbl.textContent = radiusKm.value + ' km';
+      if (document.getElementById('near-me')?.checked) loadBrowsePets();
+    });
+  }
 });

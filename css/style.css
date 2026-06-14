@@ -661,3 +661,160 @@ footer a {
 #location-picker-found {
   border: 2px solid #f97316 !important;
 }
+
+/* CARD ACTIONS */
+.card-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.action-btn {
+  background: #fff7ed;
+  border: 1px solid #f97316;
+  color: #ea580c;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.action-btn:hover { background: #ffedd5; }
+
+.btn-reunited {
+  background: #e8f5e9;
+  border-color: #2e7d32;
+  color: #1b5e20;
+}
+.btn-reunited:hover { background: #c8e6c9; }
+
+/* REUNITED CARD */
+.card-reunited { border-color: #2e7d32; opacity: 0.85; }
+
+.reunited-banner {
+  background: #2e7d32;
+  color: white;
+  text-align: center;
+  padding: 6px;
+  border-radius: 8px 8px 0 0;
+  font-weight: bold;
+  font-size: 0.9rem;
+  margin: -16px -16px 10px -16px;
+}
+
+/* TIPS */
+.tips-section {
+  margin-top: 12px;
+  border-top: 1px solid #fed7aa;
+  padding-top: 10px;
+}
+
+.tips-input-row {
+  display: flex;
+  gap: 6px;
+}
+
+.tip-input {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid #fed7aa;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-family: inherit;
+}
+
+.tip-item {
+  font-size: 0.82rem;
+  color: #555;
+  padding: 4px 0;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+/* MAP CONTROLS */
+.map-controls {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 12px;
+  padding: 12px 16px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+}
+
+.map-controls label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+  color: #444;
+  cursor: pointer;
+}
+
+.map-controls select {
+  padding: 5px 8px;
+  border: 1px solid #fed7aa;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  background: white;
+}
+
+/* NEAR ME FILTER */
+.near-me-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: #444;
+}
+
+.near-me-row label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  color: #ea580c;
+}
+
+/* PHOTO BUTTONS */
+.photo-btns {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.photo-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff7ed;
+  border: 2px solid #f97316;
+  color: #ea580c;
+  border-radius: 8px;
+  padding: 9px 16px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.photo-btn:hover { background: #ffedd5; }
+
+/* PRINT */
+@media print {
+  nav, footer, .card-actions, .tips-section, .hero-buttons,
+  .counter, .map-legend, .page-header, .section > *:not(.cards) { display: none !important; }
+  body { background: white; }
+  .card { box-shadow: none; border: 1px solid #ddd; break-inside: avoid; }
+}

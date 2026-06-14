@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐾</text></svg>">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Found a Pet — Paw Finder</title>
   <link rel="stylesheet" href="css/style.css">
@@ -81,8 +82,14 @@
     </div>
 
     <div class="form-group">
-      <label for="photo">Photo of Pet</label>
-      <input type="file" id="photo" name="photo" accept="image/*">
+      <label>Photo of Pet</label>
+      <div class="photo-btns">
+        <label class="photo-btn" for="photo">📁 Upload Photo</label>
+        <label class="photo-btn" for="photo-capture-found">📷 Take Photo</label>
+      </div>
+      <input type="file" id="photo" name="photo" accept="image/*" style="display:none">
+      <input type="file" id="photo-capture-found" accept="image/*" capture="environment" style="display:none">
+      <div id="photo-preview-found"></div>
     </div>
 
     <div class="form-group">
