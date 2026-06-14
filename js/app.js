@@ -41,7 +41,7 @@ async function updateNavUser() {
       <button class="btn-logout" onclick="logout()">Log out</button>
     `;
   } else {
-    el.innerHTML = `<a class="btn-login" href="login.html">Sign in with Google</a>`;
+    el.innerHTML = `<a class="btn-login" href="login.html">Sign in</a>`;
   }
 }
 

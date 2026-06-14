@@ -23,7 +23,7 @@
   <div class="login-box">
     <div style="font-size:3rem;margin-bottom:8px;">🐾</div>
     <h1>Welcome Back!</h1>
-    <p>Sign in with your Google account to post a lost or found pet.</p>
+    <p>Sign in to post a lost or found pet.</p>
 
     <button class="demo-btn" onclick="demoLogin()">
       🎓 Sign In (Demo)
@@ -42,12 +42,5 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="js/supabase-config.js"></script>
 <script src="js/app.js"></script>
-<script>
-  if (DB_READY) {
-    document.getElementById('login-status').innerHTML =
-      '✅ Supabase connected — Google login is ready!';
-    document.getElementById('login-status').style.color = '#a855f7';
-  }
-</script>
 </body>
 </html>

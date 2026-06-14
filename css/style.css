@@ -131,54 +131,6 @@ nav ul a:hover {
   margin-bottom: 28px;
 }
 
-.google-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  background: white;
-  border: 2px solid #fed7aa;
-  border-radius: 8px;
-  padding: 12px 20px;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  width: 100%;
-  margin-bottom: 12px;
-  color: #333;
-  transition: box-shadow 0.2s;
-}
-
-.google-btn:hover {
-  box-shadow: 0 2px 14px rgba(249,115,22,0.3);
-  border-color: #f97316;
-}
-
-.google-btn img {
-  width: 22px;
-  height: 22px;
-}
-
-.login-divider {
-  color: #fdba74;
-  font-size: 0.85rem;
-  margin: 16px 0;
-  position: relative;
-}
-
-.login-divider::before,
-.login-divider::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  width: 40%;
-  height: 1px;
-  background: #fed7aa;
-}
-
-.login-divider::before { left: 0; }
-.login-divider::after { right: 0; }
-
 .demo-btn {
   background: #fff7ed;
   border: 2px solid #f97316;
