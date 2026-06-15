@@ -393,25 +393,80 @@ function setupPhotoInput(cameraBtnId, galleryId, previewId) {
   const cameraBtn = document.getElementById(cameraBtnId);
   const galleryInput = document.getElementById(galleryId);
 
-  const showPreview = (file) => {
+  const showPreview = (blob) => {
     const preview = document.getElementById(previewId);
-    if (!preview || !file) return;
-    const url = URL.createObjectURL(file);
+    if (!preview) return;
+    const url = URL.createObjectURL(blob);
     preview.innerHTML = `<img src="${url}" style="max-width:100%;max-height:160px;object-fit:cover;border-radius:8px;margin-top:8px;border:2px solid #f97316;">`;
   };
 
   if (galleryInput) {
-    galleryInput.addEventListener('change', () => showPreview(galleryInput.files[0]));
+    galleryInput.addEventListener('change', () => {
+      if (galleryInput.files[0]) showPreview(galleryInput.files[0]);
+    });
   }
 
   if (cameraBtn && galleryInput) {
-    cameraBtn.addEventListener('click', () => {
-      galleryInput.setAttribute('capture', 'environment');
-      galleryInput.value = '';
-      galleryInput.click();
-      galleryInput.addEventListener('change', () => {
-        galleryInput.removeAttribute('capture');
-      }, { once: true });
+    cameraBtn.addEventListener('click', async () => {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        alert('Camera not supported on this device/browser.');
+        return;
+      }
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+      } catch {
+        alert('Could not access camera. Please allow camera permission and try again.');
+        return;
+      }
+
+      const overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;background:#000;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px;';
+
+      const video = document.createElement('video');
+      video.style.cssText = 'width:100%;max-width:500px;max-height:60vh;border-radius:10px;object-fit:cover;';
+      video.autoplay = true;
+      video.playsInline = true;
+      video.srcObject = stream;
+
+      const snapBtn = document.createElement('button');
+      snapBtn.textContent = '📸 Take Photo';
+      snapBtn.style.cssText = 'padding:14px 32px;background:#7c3aed;color:white;border:none;border-radius:8px;font-size:1.05rem;font-weight:bold;cursor:pointer;';
+
+      const cancelBtn = document.createElement('button');
+      cancelBtn.textContent = '✕ Cancel';
+      cancelBtn.style.cssText = 'padding:10px 24px;background:rgba(255,255,255,0.15);color:white;border:none;border-radius:8px;font-size:0.95rem;cursor:pointer;';
+
+      const btnRow = document.createElement('div');
+      btnRow.style.cssText = 'display:flex;gap:12px;';
+      btnRow.append(snapBtn, cancelBtn);
+      overlay.append(video, btnRow);
+      document.body.appendChild(overlay);
+
+      const cleanup = () => {
+        stream.getTracks().forEach(t => t.stop());
+        document.body.removeChild(overlay);
+      };
+
+      cancelBtn.onclick = cleanup;
+
+      snapBtn.onclick = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 480;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        cleanup();
+        canvas.toBlob(blob => {
+          if (!blob) return;
+          const file = new File([blob], `photo_${Date.now()}.jpg`, { type: 'image/jpeg' });
+          try {
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            galleryInput.files = dt.files;
+          } catch {}
+          showPreview(blob);
+        }, 'image/jpeg', 0.92);
+      };
     });
   }
 }
