@@ -134,11 +134,17 @@
 
   const ANIMALS = ['Dog','Dog','Dog','Dog','Cat','Cat','Cat','Cat','Rabbit','Bird','Hamster','Other'];
 
+  const PHOTO_TAG = {
+    'Dog': 'dog,puppy', 'Cat': 'cat,kitten', 'Rabbit': 'rabbit',
+    'Bird': 'bird,parrot', 'Hamster': 'hamster', 'Other': 'pet,animal'
+  };
+  const TOTAL = 3246, PHOTO_N = 214;
+
   const now = Date.now();
-  const TWO_YEARS = 730 * 86400000;
 
   const pets = [];
-  for (let i = 0; i < 3246; i++) {
+  let photoIdx = 0;
+  for (let i = 0; i < TOTAL; i++) {
     const region = pick(CITY_REGIONS);
     const animal = pick(ANIMALS);
     const isLost = chance(0.62);
@@ -159,6 +165,16 @@
 
     const lat = region.lat[0] + rng() * (region.lat[1] - region.lat[0]);
     const lng = region.lng[0] + rng() * (region.lng[1] - region.lng[0]);
+
+    // Evenly distribute 214 photos across all 3246 pets (Bresenham distribution)
+    const wantPhoto = Math.floor((i + 1) * PHOTO_N / TOTAL) > Math.floor(i * PHOTO_N / TOTAL);
+    let photoUrl = null;
+    if (wantPhoto) {
+      photoIdx++;
+      const tag = PHOTO_TAG[animal] || 'pet';
+      const lock = ((photoIdx - 1) % 99) + 1;
+      photoUrl = `https://loremflickr.com/300/200/${tag}?lock=${lock}`;
+    }
 
     pets.push({
       id: 'demo-' + (i + 1),
@@ -183,7 +199,7 @@
       lng: parseFloat(lng.toFixed(5)),
       reunited: isReunited,
       status: isReunited ? 'reunited' : 'active',
-      photo_url: null,
+      photo_url: photoUrl,
       photo_url_2: null,
       photo_url_3: null,
       created_at: postDate.toISOString(),
