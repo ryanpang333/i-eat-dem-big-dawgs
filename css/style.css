@@ -749,3 +749,18 @@ footer a {
 [data-theme="dark"] .privacy-row { background: #1e293b; border-color: #334155; }
 [data-theme="dark"] .privacy-label { color: #a78bfa; }
 [data-theme="dark"] .contact-hint { color: #475569; }
+
+/* dark mode — orange elements → purple */
+[data-theme="dark"] nav { background: #2e1065; border-bottom-color: #6d28d9; }
+[data-theme="dark"] .hero { background: linear-gradient(135deg, #2e1065, #4c1d95, #7c3aed); border-bottom-color: #6d28d9; }
+[data-theme="dark"] .page-header { background: linear-gradient(135deg, #2e1065, #4c1d95); border-bottom-color: #6d28d9; }
+[data-theme="dark"] .submit-btn { background: #7c3aed; }
+[data-theme="dark"] .submit-btn:hover { background: #6d28d9; }
+[data-theme="dark"] .form-group input:focus,
+[data-theme="dark"] .form-group select:focus,
+[data-theme="dark"] .form-group textarea:focus { border-color: #a78bfa; box-shadow: 0 0 0 2px rgba(167,139,250,0.2); }
+[data-theme="dark"] #location-picker-lost,
+[data-theme="dark"] #location-picker-found { border-color: #a78bfa !important; }
+[data-theme="dark"] .card img { background: #334155; }
+[data-theme="dark"] #photo-preview-lost img,
+[data-theme="dark"] #photo-preview-found img { border-color: #a78bfa !important; }

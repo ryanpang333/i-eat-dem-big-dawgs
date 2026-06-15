@@ -389,8 +389,8 @@ async function loadBrowsePets() {
 
 // ── PHOTO INPUT ──────────────────────────────────────────────────────────────
 
-function setupPhotoInput(captureId, galleryId, previewId) {
-  const captureInput = document.getElementById(captureId);
+function setupPhotoInput(cameraBtnId, galleryId, previewId) {
+  const cameraBtn = document.getElementById(cameraBtnId);
   const galleryInput = document.getElementById(galleryId);
 
   const showPreview = (file) => {
@@ -403,14 +403,15 @@ function setupPhotoInput(captureId, galleryId, previewId) {
   if (galleryInput) {
     galleryInput.addEventListener('change', () => showPreview(galleryInput.files[0]));
   }
-  if (captureInput) {
-    captureInput.addEventListener('change', () => {
-      const file = captureInput.files[0];
-      if (!file || !galleryInput) return;
-      const dt = new DataTransfer();
-      dt.items.add(file);
-      galleryInput.files = dt.files;
-      showPreview(file);
+
+  if (cameraBtn && galleryInput) {
+    cameraBtn.addEventListener('click', () => {
+      galleryInput.setAttribute('capture', 'environment');
+      galleryInput.value = '';
+      galleryInput.click();
+      galleryInput.addEventListener('change', () => {
+        galleryInput.removeAttribute('capture');
+      }, { once: true });
     });
   }
 }
@@ -648,8 +649,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   initLocationPicker('location-picker-lost', 'lat-lost', 'lng-lost', 'pin-status-lost');
   initLocationPicker('location-picker-found', 'lat-found', 'lng-found', 'pin-status-found');
-  setupPhotoInput('photo-capture-lost', 'photo', 'photo-preview-lost');
-  setupPhotoInput('photo-capture-found', 'photo', 'photo-preview-found');
+  setupPhotoInput('camera-btn-lost', 'photo', 'photo-preview-lost');
+  setupPhotoInput('camera-btn-found', 'photo', 'photo-preview-found');
 
   subscribeToNewPets();
 
