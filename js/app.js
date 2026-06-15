@@ -1,15 +1,18 @@
 // ── DATA ─────────────────────────────────────────────────────────────────────
 
 async function getPets() {
+  const demo = (window.DEMO_PETS || []).map(p => ({ ...p, location: p._fullLocation || p.location }));
+  let real = [];
   if (DB_READY) {
     const { data, error } = await supabaseClient
       .from('pets')
       .select('*')
       .order('created_at', { ascending: false });
-    if (error) { console.error(error); return []; }
-    return data;
+    if (!error) real = data;
+  } else {
+    real = JSON.parse(localStorage.getItem('pawfinder_pets') || '[]').reverse();
   }
-  return JSON.parse(localStorage.getItem('pawfinder_pets') || '[]').reverse();
+  return [...real, ...demo];
 }
 
 async function savePet(pet) {
@@ -82,13 +85,25 @@ function escHtml(str) {
   return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
+function daysSince(dateStr) {
+  if (!dateStr) return null;
+  const d = new Date(String(dateStr).split(' at ')[0]);
+  if (isNaN(d.getTime())) return null;
+  return Math.max(0, Math.floor((Date.now() - d.getTime()) / 86400000));
+}
+
+async function processPhoto(file) {
+  if (!file) return null;
+  if (DB_READY) return uploadPhoto(file);
+  return new Promise(res => { const r = new FileReader(); r.onload = ev => res(ev.target.result); r.readAsDataURL(file); });
+}
+
 // ── RENDER ───────────────────────────────────────────────────────────────────
 
 function renderCard(pet) {
   const key = pet.id ? String(pet.id) : `local-${++_seq}`;
   petStore.set(key, pet);
 
-  const imgSrc = pet.photo_url || pet.photo || 'https://placehold.co/300x150?text=No+Photo';
   const label = pet.type === 'lost' ? 'LOST' : 'FOUND';
   const locationLabel = pet.type === 'lost' ? 'Last seen' : 'Found at';
   const isReunited = pet.status === 'reunited';
@@ -96,6 +111,26 @@ function renderCard(pet) {
   const emailSafe = escHtml(pet.email || '');
   const phonePrivate = !!pet.phone_hidden;
   const name = escHtml(pet.pet_name || pet.petName || 'Unknown');
+
+  const days = daysSince(pet.date);
+  const isUrgent = pet.type === 'lost' && !isReunited && days !== null && days >= 7;
+
+  const photos = [pet.photo_url, pet.photo_url_2, pet.photo_url_3, pet.photo].filter(Boolean);
+  if (!photos.length) photos.push('https://placehold.co/300x150?text=No+Photo');
+
+  const gallery = `
+    <div class="pet-gallery" id="gallery-${key}" data-current="0">
+      <img class="gallery-img" src="${escHtml(photos[0])}" alt="${name}">
+      ${photos.length > 1 ? `
+        <button class="gallery-nav gallery-prev" onclick="galleryNav('${key}',-1)">‹</button>
+        <button class="gallery-nav gallery-next" onclick="galleryNav('${key}',1)">›</button>
+        <div class="gallery-dots">
+          ${photos.map((_,i) => `<span class="gallery-dot${i===0?' active':''}" onclick="galleryGoto('${key}',${i})"></span>`).join('')}
+        </div>` : ''}
+    </div>`;
+
+  const petId = pet.id || key;
+  const sightCount = JSON.parse(localStorage.getItem(`sightings_${petId}`) || '[]').length;
 
   let contactRows = `<p style="margin-top:8px;"><strong>Contact:</strong> ${escHtml(pet.owner_name || pet.ownerName)}</p>`;
   if (phoneSafe) {
@@ -111,9 +146,10 @@ function renderCard(pet) {
   }
 
   return `
-    <div class="card${isReunited ? ' card-reunited' : ''}">
+    <div class="card${isReunited ? ' card-reunited' : ''}${isUrgent ? ' card-urgent' : ''}">
       ${isReunited ? '<div class="reunited-banner">🎉 REUNITED!</div>' : ''}
-      <img src="${imgSrc}" alt="${name}">
+      ${isUrgent ? '<div class="urgent-badge">🚨 URGENT — Missing over a week!</div>' : ''}
+      ${gallery}
       <span class="badge-${pet.type}">${label}</span>
       <h3>${name}</h3>
       <p><strong>Animal:</strong> ${escHtml(pet.animal)} ${pet.breed ? '— ' + escHtml(pet.breed) : ''}</p>
@@ -122,6 +158,7 @@ function renderCard(pet) {
       <p><strong>Size:</strong> ${escHtml(pet.size)}</p>
       <p><strong>${locationLabel}:</strong> ${escHtml(pet.location)}</p>
       <p><strong>Date:</strong> ${escHtml(pet.date)}</p>
+      ${days !== null ? `<p class="days-counter${isUrgent?' days-urgent':''}">${pet.type==='lost'?'⏱ Missing':'📅 Found'} ${days===0?'today':`${days} day${days!==1?'s':''} ago`}</p>` : ''}
       ${pet.special ? `<p><strong>Special:</strong> ${escHtml(pet.special)}</p>` : ''}
       ${pet.reward === true || pet.reward === 'yes' ? `<p style="color:#c62828;font-weight:bold;">Reward offered!</p>` : ''}
       ${contactRows}
@@ -132,6 +169,8 @@ function renderCard(pet) {
         <button class="action-btn" onclick="whatsappShare('${key}')">💬 WhatsApp</button>
         <button class="action-btn" onclick="sharePost('${key}')">🔗 Share</button>
         <button class="action-btn" onclick="printFlyer('${key}')">🖨️ Print Flyer</button>
+        ${!isReunited ? `<button class="action-btn btn-spotted" onclick="openSpottingModal('${key}')">👁 Spotted${sightCount?` (${sightCount})`:''}</button>` : ''}
+        <button class="action-btn" onclick="openDetailModal('${key}')">🔍 Details</button>
         ${!isReunited && pet.id ? `<button class="action-btn btn-reunited" onclick="markReunited('${key}',this)">🎉 Reunited!</button>` : ''}
       </div>
       <div class="tips-section">
@@ -242,6 +281,141 @@ function printFlyer(key) {
   <script>window.onload=function(){window.print()}<\/script>
   </body></html>`);
   w.document.close();
+}
+
+// ── GALLERY ──────────────────────────────────────────────────────────────────
+
+function galleryNav(key, dir) {
+  const pet = petStore.get(key);
+  if (!pet) return;
+  const photos = [pet.photo_url, pet.photo_url_2, pet.photo_url_3, pet.photo].filter(Boolean);
+  const gallery = document.getElementById(`gallery-${key}`);
+  if (!gallery || photos.length <= 1) return;
+  const cur = parseInt(gallery.dataset.current || '0');
+  galleryGoto(key, (cur + dir + photos.length) % photos.length);
+}
+
+function galleryGoto(key, idx) {
+  const pet = petStore.get(key);
+  if (!pet) return;
+  const photos = [pet.photo_url, pet.photo_url_2, pet.photo_url_3, pet.photo].filter(Boolean);
+  const gallery = document.getElementById(`gallery-${key}`);
+  if (!gallery) return;
+  gallery.dataset.current = idx;
+  const img = gallery.querySelector('.gallery-img');
+  if (img) img.src = photos[idx] || '';
+  gallery.querySelectorAll('.gallery-dot').forEach((d,i) => d.classList.toggle('active', i === idx));
+}
+
+// ── SPOTTING MODAL ────────────────────────────────────────────────────────────
+
+function openSpottingModal(key) {
+  const now = new Date().toISOString().slice(0,16);
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal-box">
+      <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button>
+      <h2>👁 I Spotted This Pet!</h2>
+      <p>Help the owner by telling them where and when you saw it.</p>
+      <div class="form-group" style="margin-top:16px;">
+        <label>Where did you see it?</label>
+        <input type="text" id="spot-where" placeholder="e.g. Near the park on Elm St"
+          style="width:100%;padding:10px;border:1px solid #fed7aa;border-radius:8px;font-size:0.95rem;margin-top:6px;">
+      </div>
+      <div class="form-group" style="margin-top:12px;">
+        <label>When?</label>
+        <input type="datetime-local" id="spot-when" value="${now}"
+          style="width:100%;padding:10px;border:1px solid #fed7aa;border-radius:8px;font-size:0.95rem;margin-top:6px;">
+      </div>
+      <div style="display:flex;gap:10px;margin-top:20px;">
+        <button class="submit-btn" style="width:auto;padding:10px 20px;" onclick="saveSpotting('${key}',this)">📍 Submit Sighting</button>
+        <button class="action-btn" style="padding:10px 16px;" onclick="this.closest('.modal-overlay').remove()">Cancel</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+function saveSpotting(key, btn) {
+  const where = document.getElementById('spot-where')?.value.trim();
+  const when = document.getElementById('spot-when')?.value;
+  if (!where) { alert('Please describe where you saw the pet.'); return; }
+  const pet = petStore.get(key);
+  const petId = pet?.id || key;
+  const sightings = JSON.parse(localStorage.getItem(`sightings_${petId}`) || '[]');
+  sightings.push({ where, when: when || new Date().toISOString() });
+  localStorage.setItem(`sightings_${petId}`, JSON.stringify(sightings));
+  btn.closest('.modal-overlay').remove();
+  const spottedBtn = document.querySelector(`[onclick="openSpottingModal('${key}')"]`);
+  if (spottedBtn) spottedBtn.textContent = `👁 Spotted (${sightings.length})`;
+  alert('✅ Sighting reported! Check the Details view to see all sightings.');
+}
+
+// ── DETAIL MODAL ──────────────────────────────────────────────────────────────
+
+function openDetailModal(key) {
+  const pet = petStore.get(key);
+  if (!pet) return;
+  const name = escHtml(pet.pet_name || pet.petName || 'Unknown');
+  const photos = [pet.photo_url, pet.photo_url_2, pet.photo_url_3, pet.photo].filter(Boolean);
+  const mainImg = photos[0] ? `<img src="${escHtml(photos[0])}" style="width:100%;max-height:220px;object-fit:cover;border-radius:10px;margin-bottom:14px;">` : '';
+  const petId = pet.id || key;
+  const sightings = JSON.parse(localStorage.getItem(`sightings_${petId}`) || '[]');
+  const days = daysSince(pet.date);
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal-box modal-detail">
+      <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button>
+      ${mainImg}
+      <span class="badge-${pet.type}" style="margin-bottom:8px;display:inline-block;">${pet.type==='lost'?'LOST':'FOUND'}</span>
+      <h2 style="margin:6px 0;">${name}</h2>
+      ${days !== null ? `<p style="color:#aaa;font-size:0.85rem;">⏱ ${pet.type==='lost'?'Missing':'Found'} ${days===0?'today':`${days} day${days!==1?'s':''} ago`}</p>` : ''}
+      <hr class="modal-hr">
+      <p><strong>Animal:</strong> ${escHtml(pet.animal)}${pet.breed?' — '+escHtml(pet.breed):''}</p>
+      <p><strong>Color:</strong> ${escHtml(pet.color)}</p>
+      ${pet.age?`<p><strong>Age:</strong> ${escHtml(pet.age)}</p>`:''}
+      <p><strong>Size:</strong> ${escHtml(pet.size)}</p>
+      <p><strong>${pet.type==='lost'?'Last seen':'Found at'}:</strong> ${escHtml(pet.location)}</p>
+      <p><strong>Date:</strong> ${escHtml(pet.date)}</p>
+      ${pet.special?`<p><strong>Special:</strong> ${escHtml(pet.special)}</p>`:''}
+      ${pet.reward===true||pet.reward==='yes'?`<p style="color:#c62828;font-weight:bold;">💰 Reward offered!</p>`:''}
+      <hr class="modal-hr">
+      <p><strong>Contact:</strong> ${escHtml(pet.owner_name||pet.ownerName)}</p>
+      ${pet.phone&&!pet.phone_hidden?`<p>📞 ${escHtml(pet.phone)}</p>`:''}
+      ${pet.phone&&pet.phone_hidden?`<p style="color:#aaa;">📞 Phone private</p>`:''}
+      ${pet.email?`<p>📧 ${escHtml(pet.email)}</p>`:''}
+      ${sightings.length?`
+        <hr class="modal-hr">
+        <p><strong>👁 Sightings (${sightings.length})</strong></p>
+        ${sightings.map(s=>`<p style="font-size:0.85rem;">📍 ${escHtml(s.where)} — ${s.when?new Date(s.when).toLocaleString():''}</p>`).join('')}
+      `:'<p style="color:#aaa;font-size:0.85rem;margin-top:10px;">No sightings reported yet.</p>'}
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+// ── SHELTERS ─────────────────────────────────────────────────────────────────
+
+let shelterMarkers = [];
+
+async function toggleShelters(show) {
+  shelterMarkers.forEach(m => mapInstance && mapInstance.removeLayer(m));
+  shelterMarkers = [];
+  if (!show || !mapInstance) return;
+  const c = mapInstance.getCenter();
+  const q = `[out:json];(node["amenity"="veterinary"](around:8000,${c.lat},${c.lng});node["amenity"="animal_shelter"](around:8000,${c.lat},${c.lng}););out;`;
+  try {
+    const res = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(q)}`);
+    const data = await res.json();
+    data.elements.forEach(el => {
+      if (!el.lat || !el.lon) return;
+      const m = L.circleMarker([el.lat, el.lon], { color:'#0369a1', fillColor:'#0ea5e9', fillOpacity:0.9, radius:9, weight:2 }).addTo(mapInstance);
+      m.bindPopup(`<strong>🏥 ${escHtml(el.tags?.name||'Animal Shelter / Vet')}</strong><br><small>${escHtml(el.tags?.['addr:street']||'')}</small>`);
+      shelterMarkers.push(m);
+    });
+  } catch { alert('Could not load shelters. Try again.'); }
 }
 
 async function markReunited(key, btn) {
@@ -375,6 +549,11 @@ async function loadBrowsePets() {
     }
   }
 
+  const sizeFilter = document.getElementById('filter-size')?.value;
+  const colorFilter = document.getElementById('filter-color')?.value.trim().toLowerCase();
+  if (sizeFilter) pets = pets.filter(p => p.size === sizeFilter);
+  if (colorFilter) pets = pets.filter(p => (p.color || '').toLowerCase().includes(colorFilter));
+
   const sort = document.getElementById('sort-order')?.value || 'newest';
   if (sort === 'oldest') pets = [...pets].reverse();
   else if (sort === 'az') pets = [...pets].sort((a, b) => (a.pet_name || a.petName || '').localeCompare(b.pet_name || b.petName || ''));
@@ -504,13 +683,6 @@ async function submitLostForm(e) {
   const btn = form.querySelector('.submit-btn');
   btn.textContent = 'Posting...'; btn.disabled = true;
   try {
-    const photoFile = form.photo.files[0];
-    let photoUrl = null;
-    if (photoFile) {
-      photoUrl = DB_READY ? await uploadPhoto(photoFile) : await new Promise(res => {
-        const r = new FileReader(); r.onload = ev => res(ev.target.result); r.readAsDataURL(photoFile);
-      });
-    }
     const phone = form.phone?.value.trim();
     const email = form.email?.value.trim();
     if (!phone && !email) {
@@ -518,13 +690,19 @@ async function submitLostForm(e) {
       btn.textContent = 'Post Lost Pet Notice'; btn.disabled = false;
       return;
     }
+    const [photoUrl, photoUrl2, photoUrl3] = await Promise.all([
+      processPhoto(form.photo?.files[0]),
+      processPhoto(form.photo2?.files[0]),
+      processPhoto(form.photo3?.files[0]),
+    ]);
     const locParts = [form.location?.value, form.state?.value, form.country?.value].filter(Boolean);
     const timeSeen = form.time_seen?.value;
     await savePet({
       type: 'lost', owner_name: form.ownerName.value, phone: phone || '',
       email: email || '', phone_hidden: !!form.phone_hidden?.checked,
       pet_name: form.petName.value, animal: form.animal.value, breed: form.breed.value,
-      color: form.color.value, size: form.size.value, age: form.age?.value || '', photo_url: photoUrl,
+      color: form.color.value, size: form.size.value, age: form.age?.value || '',
+      photo_url: photoUrl, photo_url_2: photoUrl2, photo_url_3: photoUrl3,
       location: locParts.join(', ') || 'Unknown',
       date: form.date.value + (timeSeen ? ' at ' + timeSeen : ''),
       special: form.special.value,
@@ -534,8 +712,9 @@ async function submitLostForm(e) {
     form.reset();
     document.getElementById('pin-status-lost').textContent = 'No location selected yet.';
     document.getElementById('pin-status-lost').style.color = '#888';
-    const prevLost = document.getElementById('photo-preview-lost');
-    if (prevLost) prevLost.innerHTML = '';
+    ['photo-preview-lost','photo-preview2-lost','photo-preview3-lost'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.innerHTML = '';
+    });
     const s = document.getElementById('success-lost');
     s.style.display = 'block';
     setTimeout(() => s.style.display = 'none', 4000);
@@ -552,13 +731,6 @@ async function submitFoundForm(e) {
   const btn = form.querySelector('.submit-btn');
   btn.textContent = 'Posting...'; btn.disabled = true;
   try {
-    const photoFile = form.photo.files[0];
-    let photoUrl = null;
-    if (photoFile) {
-      photoUrl = DB_READY ? await uploadPhoto(photoFile) : await new Promise(res => {
-        const r = new FileReader(); r.onload = ev => res(ev.target.result); r.readAsDataURL(photoFile);
-      });
-    }
     const phone = form.phone?.value.trim();
     const email = form.email?.value.trim();
     if (!phone && !email) {
@@ -566,13 +738,19 @@ async function submitFoundForm(e) {
       btn.textContent = 'Post Found Pet Notice'; btn.disabled = false;
       return;
     }
+    const [photoUrl, photoUrl2, photoUrl3] = await Promise.all([
+      processPhoto(form.photo?.files[0]),
+      processPhoto(form.photo2?.files[0]),
+      processPhoto(form.photo3?.files[0]),
+    ]);
     const locParts = [form.location?.value, form.state?.value, form.country?.value].filter(Boolean);
     const timeSeen = form.time_seen?.value;
     await savePet({
       type: 'found', owner_name: form.finderName.value, phone: phone || '',
       email: email || '', phone_hidden: !!form.phone_hidden?.checked,
       pet_name: 'Unknown', animal: form.animal.value, breed: '',
-      color: form.color.value, size: form.size.value, age: form.age?.value || '', photo_url: photoUrl,
+      color: form.color.value, size: form.size.value, age: form.age?.value || '',
+      photo_url: photoUrl, photo_url_2: photoUrl2, photo_url_3: photoUrl3,
       location: locParts.join(', ') || 'Unknown',
       date: form.date.value + (timeSeen ? ' at ' + timeSeen : ''),
       special: form.special.value,
@@ -582,8 +760,9 @@ async function submitFoundForm(e) {
     form.reset();
     document.getElementById('pin-status-found').textContent = 'No location selected yet.';
     document.getElementById('pin-status-found').style.color = '#888';
-    const prevFound = document.getElementById('photo-preview-found');
-    if (prevFound) prevFound.innerHTML = '';
+    ['photo-preview-found','photo-preview2-found','photo-preview3-found'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.innerHTML = '';
+    });
     const s = document.getElementById('success-found');
     s.style.display = 'block';
     setTimeout(() => s.style.display = 'none', 4000);
@@ -707,7 +886,27 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupPhotoInput('camera-btn-lost', 'photo', 'photo-preview-lost');
   setupPhotoInput('camera-btn-found', 'photo', 'photo-preview-found');
 
+  function setupExtraPhoto(inputId, previewId) {
+    const input = document.getElementById(inputId);
+    const preview = document.getElementById(previewId);
+    if (!input || !preview) return;
+    input.addEventListener('change', () => {
+      const file = input.files[0];
+      if (!file) { preview.innerHTML = ''; return; }
+      const url = URL.createObjectURL(file);
+      preview.innerHTML = `<img src="${url}" style="max-width:100%;max-height:120px;border-radius:8px;">`;
+    });
+  }
+  setupExtraPhoto('photo2-lost', 'photo-preview2-lost');
+  setupExtraPhoto('photo3-lost', 'photo-preview3-lost');
+  setupExtraPhoto('photo2-found', 'photo-preview2-found');
+  setupExtraPhoto('photo3-found', 'photo-preview3-found');
+
   subscribeToNewPets();
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
 
   const lostForm = document.getElementById('lost-form');
   if (lostForm) lostForm.addEventListener('submit', submitLostForm);
@@ -734,4 +933,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const sortOrder = document.getElementById('sort-order');
   if (sortOrder) sortOrder.addEventListener('change', loadBrowsePets);
+
+  const filterSize = document.getElementById('filter-size');
+  if (filterSize) filterSize.addEventListener('change', loadBrowsePets);
+  const filterColor = document.getElementById('filter-color');
+  if (filterColor) filterColor.addEventListener('input', loadBrowsePets);
 });

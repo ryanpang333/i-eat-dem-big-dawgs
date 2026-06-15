@@ -7,6 +7,8 @@
   <title>Map — Paw Finder</title>
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#f97316">
 </head>
 <body>
 
@@ -20,6 +22,7 @@
     <li><a href="tips.html">Tips</a></li>
     <li><a href="success-stories.html">Success Stories</a></li>
     <li><a href="map.html">Map</a></li>
+    <li><a href="stats.html">📊 Stats</a></li>
     <li><a href="about.html">About</a></li>
     <li><a href="contact.html">Contact</a></li>
   </ul>
@@ -45,11 +48,13 @@
       <option>Other</option>
     </select>
     <label><input type="checkbox" id="toggle-heatmap" onchange="renderMapMarkers()"> 🔥 Heatmap</label>
+    <label><input type="checkbox" id="toggle-shelters" onchange="toggleShelters(this.checked)"> 🏥 Shelters</label>
   </div>
 
   <div class="map-legend">
     <div class="legend-item"><span class="dot dot-red"></span> Lost Pet</div>
     <div class="legend-item"><span class="dot dot-green"></span> Found Pet</div>
+    <div class="legend-item"><span class="dot dot-blue"></span> Shelter/Vet</div>
     <div class="legend-item" style="margin-left:auto;font-size:0.9rem;color:#ff7043;font-weight:bold;">
       📍 <span id="map-pin-count">0</span> pins on the map
     </div>
@@ -76,6 +81,7 @@
 <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="js/supabase-config.js"></script>
+<script src="js/demo-pets.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

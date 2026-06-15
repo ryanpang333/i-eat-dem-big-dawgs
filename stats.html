@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐾</text></svg>">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stats — Paw Finder</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#f97316">
+</head>
+<body>
+
+<nav>
+  <a class="logo" href="index.html">🐾 Paw Finder</a>
+  <ul>
+    <li><a href="index.html">Home</a></li>
+    <li><a href="post-lost.html">Lost a Pet</a></li>
+    <li><a href="found-pet.html">Found a Pet</a></li>
+    <li><a href="browse.html">Browse</a></li>
+    <li><a href="tips.html">Tips</a></li>
+    <li><a href="success-stories.html">Success Stories</a></li>
+    <li><a href="map.html">Map</a></li>
+    <li><a href="stats.html">📊 Stats</a></li>
+    <li><a href="about.html">About</a></li>
+    <li><a href="contact.html">Contact</a></li>
+  </ul>
+</nav>
+
+<div class="page-header">
+  <h1>📊 Paw Finder Stats</h1>
+  <p>Real-time numbers from our community.</p>
+</div>
+
+<div class="section">
+
+  <div class="stat-cards" id="stat-cards">
+    <div class="stat-card">
+      <div class="stat-num" id="stat-total">0</div>
+      <div class="stat-label">Total Posts</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="stat-lost" style="color:#c62828;">0</div>
+      <div class="stat-label">Lost Pets</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="stat-found" style="color:#2e7d32;">0</div>
+      <div class="stat-label">Found Pets</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="stat-reunited" style="color:#f97316;">0</div>
+      <div class="stat-label">Reunited 🎉</div>
+    </div>
+  </div>
+
+  <h2 style="margin-top:40px;margin-bottom:16px;">By Animal Type</h2>
+  <div id="stat-bars"></div>
+
+  <h2 style="margin-top:40px;margin-bottom:16px;">By Size</h2>
+  <div id="stat-size-bars"></div>
+
+  <p style="margin-top:32px;color:#888;font-size:0.85rem;text-align:center;">
+    Stats update every time you visit this page.
+  </p>
+
+</div>
+
+<footer>
+  <p>© 2026 Paw Finder — Made by Ryan | <a href="contact.html" style="color:#ffb300;">Contact Us</a></p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/demo-pets.js"></script>
+<script src="js/app.js"></script>
+<script>
+async function loadStats() {
+  const pets = await getPets();
+  const total = pets.length;
+  const lost = pets.filter(p => p.type === 'lost').length;
+  const found = pets.filter(p => p.type === 'found').length;
+  const reunited = pets.filter(p => p.reunited || p.status === 'reunited').length;
+
+  function countUp(id, target) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const dur = 1200;
+    const start = Date.now();
+    const tick = () => {
+      const t = Math.min(1, (Date.now() - start) / dur);
+      const ease = t < 0.5 ? 2*t*t : -1+(4-2*t)*t;
+      el.textContent = Math.round(ease * target);
+      if (t < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
+
+  countUp('stat-total', total);
+  countUp('stat-lost', lost);
+  countUp('stat-found', found);
+  countUp('stat-reunited', reunited);
+
+  function renderBars(containerId, counts) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    const max = Math.max(...Object.values(counts), 1);
+    container.innerHTML = Object.entries(counts)
+      .sort((a,b) => b[1]-a[1])
+      .map(([name, count]) => `
+        <div class="stat-bar-row">
+          <div class="stat-bar-name">${name}</div>
+          <div class="stat-bar-track">
+            <div class="stat-bar-fill" style="width:${Math.round(count/max*100)}%"></div>
+          </div>
+          <div class="stat-bar-count">${count}</div>
+        </div>
+      `).join('');
+  }
+
+  const animalCounts = {};
+  const sizeCounts = {};
+  pets.forEach(p => {
+    const a = p.animal || 'Other';
+    animalCounts[a] = (animalCounts[a] || 0) + 1;
+    const s = p.size || 'Unknown';
+    sizeCounts[s] = (sizeCounts[s] || 0) + 1;
+  });
+
+  renderBars('stat-bars', animalCounts);
+  renderBars('stat-size-bars', sizeCounts);
+}
+
+document.addEventListener('DOMContentLoaded', loadStats);
+</script>
+</body>
+</html>
