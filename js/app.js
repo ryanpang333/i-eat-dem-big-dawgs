@@ -36,13 +36,41 @@ async function uploadPhoto(file) {
 async function loadCounter() {
   const el = document.getElementById('reunited-count');
   if (!el) return;
+  let target;
   if (DB_READY) {
     const { count, error } = await supabaseClient
       .from('pets').select('id', { count: 'exact', head: true }).eq('status', 'reunited');
-    el.textContent = error ? (localStorage.getItem('pawfinder_reunited') || '10') : (count ?? 0);
+    target = error ? parseInt(localStorage.getItem('pawfinder_reunited') || '10') : (count ?? 0);
   } else {
-    el.textContent = localStorage.getItem('pawfinder_reunited') || '10';
+    target = parseInt(localStorage.getItem('pawfinder_reunited') || '10');
   }
+  const duration = 1200;
+  const startTime = performance.now();
+  (function tick(now) {
+    const t = Math.min((now - startTime) / duration, 1);
+    el.textContent = Math.round((1 - Math.pow(1 - t, 3)) * target);
+    if (t < 1) requestAnimationFrame(tick);
+  })(performance.now());
+}
+
+function initDarkMode() {
+  if (localStorage.getItem('pawfinder_theme') === 'dark')
+    document.documentElement.setAttribute('data-theme', 'dark');
+  const nav = document.querySelector('nav');
+  if (!nav) return;
+  const btn = document.createElement('button');
+  btn.className = 'dark-toggle';
+  const update = () => {
+    btn.textContent = document.documentElement.getAttribute('data-theme') === 'dark' ? '☀️ Light' : '🌙 Dark';
+  };
+  update();
+  btn.onclick = () => {
+    const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+    if (dark) { document.documentElement.removeAttribute('data-theme'); localStorage.setItem('pawfinder_theme', 'light'); }
+    else { document.documentElement.setAttribute('data-theme', 'dark'); localStorage.setItem('pawfinder_theme', 'dark'); }
+    update();
+  };
+  nav.appendChild(btn);
 }
 
 // ── PET STORE ────────────────────────────────────────────────────────────────
@@ -75,15 +103,23 @@ function renderCard(pet) {
       <h3>${name}</h3>
       <p><strong>Animal:</strong> ${escHtml(pet.animal)} ${pet.breed ? '— ' + escHtml(pet.breed) : ''}</p>
       <p><strong>Color:</strong> ${escHtml(pet.color)}</p>
+      ${pet.age ? `<p><strong>Age:</strong> ${escHtml(pet.age)}</p>` : ''}
       <p><strong>Size:</strong> ${escHtml(pet.size)}</p>
       <p><strong>${locationLabel}:</strong> ${escHtml(pet.location)}</p>
       <p><strong>Date:</strong> ${escHtml(pet.date)}</p>
       ${pet.special ? `<p><strong>Special:</strong> ${escHtml(pet.special)}</p>` : ''}
       ${pet.reward === true || pet.reward === 'yes' ? `<p style="color:#c62828;font-weight:bold;">Reward offered!</p>` : ''}
-      <p style="margin-top:8px;"><strong>Contact:</strong> ${escHtml(pet.owner_name || pet.ownerName)} — ${phoneSafe}</p>
+      <p style="margin-top:8px;"><strong>Contact:</strong> ${escHtml(pet.owner_name || pet.ownerName)}</p>
+      <p style="margin-top:6px;font-size:0.85rem;color:#666;">
+        ${phoneSafe
+          ? `📞 <span id="phone-val-${key}" style="display:none;font-weight:bold;">${phoneSafe}</span>
+             <button class="action-btn" id="phone-toggle-${key}" onclick="togglePhone('${key}')">🔒 Show Phone</button>`
+          : `📞 <em>No phone provided</em>`}
+      </p>
       ${pet.lat && pet.lng ? `<a href="map.html" style="display:inline-block;margin-top:8px;font-size:0.8rem;color:#f97316;">📍 See on map</a>` : ''}
       <div class="card-actions">
-        <button class="action-btn" onclick="copyPhone('${phoneSafe}',this)">📋 Copy Phone</button>
+        ${phoneSafe ? `<button class="action-btn" onclick="copyPhone('${phoneSafe}',this)">📋 Copy Phone</button>` : ''}
+        <button class="action-btn" onclick="whatsappShare('${key}')">💬 WhatsApp</button>
         <button class="action-btn" onclick="sharePost('${key}')">🔗 Share</button>
         <button class="action-btn" onclick="printFlyer('${key}')">🖨️ Print Flyer</button>
         ${!isReunited && pet.id ? `<button class="action-btn btn-reunited" onclick="markReunited('${key}',this)">🎉 Reunited!</button>` : ''}
@@ -101,12 +137,30 @@ function renderCard(pet) {
 
 // ── CARD ACTIONS ─────────────────────────────────────────────────────────────
 
+function togglePhone(key) {
+  const val = document.getElementById(`phone-val-${key}`);
+  const btn = document.getElementById(`phone-toggle-${key}`);
+  if (!val || !btn) return;
+  const hidden = val.style.display === 'none';
+  val.style.display = hidden ? 'inline' : 'none';
+  btn.textContent = hidden ? '🔓 Hide Phone' : '🔒 Show Phone';
+}
+
 function copyPhone(phone, btn) {
   navigator.clipboard.writeText(phone).then(() => {
     const orig = btn.textContent;
     btn.textContent = '✅ Copied!';
     setTimeout(() => btn.textContent = orig, 2000);
   });
+}
+
+function whatsappShare(key) {
+  const pet = petStore.get(key);
+  if (!pet) return;
+  const name = pet.pet_name || pet.petName || 'Unknown';
+  const label = pet.type === 'lost' ? '🔴 LOST PET' : '🟢 FOUND PET';
+  const text = `${label}: ${name} (${pet.animal}) near ${pet.location}. Date: ${pet.date}. Contact: ${pet.owner_name || pet.ownerName}${pet.phone ? ' — ' + pet.phone : ''}`;
+  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
 }
 
 function sharePost(key) {
@@ -284,6 +338,10 @@ async function loadBrowsePets() {
     }
   }
 
+  const sort = document.getElementById('sort-order')?.value || 'newest';
+  if (sort === 'oldest') pets = [...pets].reverse();
+  else if (sort === 'az') pets = [...pets].sort((a, b) => (a.pet_name || a.petName || '').localeCompare(b.pet_name || b.petName || ''));
+
   if (!pets.length) {
     container.innerHTML = '<p class="empty-state">No pets found. Try adjusting your search.</p>';
     return;
@@ -365,7 +423,7 @@ async function submitLostForm(e) {
     await savePet({
       type: 'lost', owner_name: form.ownerName.value, phone: form.phone.value,
       pet_name: form.petName.value, animal: form.animal.value, breed: form.breed.value,
-      color: form.color.value, size: form.size.value, photo_url: photoUrl,
+      color: form.color.value, size: form.size.value, age: form.age?.value || '', photo_url: photoUrl,
       location: locParts.join(', ') || 'Unknown',
       date: form.date.value + (timeSeen ? ' at ' + timeSeen : ''),
       special: form.special.value,
@@ -405,7 +463,7 @@ async function submitFoundForm(e) {
     await savePet({
       type: 'found', owner_name: form.finderName.value, phone: form.phone.value,
       pet_name: 'Unknown', animal: form.animal.value, breed: '',
-      color: form.color.value, size: form.size.value, photo_url: photoUrl,
+      color: form.color.value, size: form.size.value, age: form.age?.value || '', photo_url: photoUrl,
       location: locParts.join(', ') || 'Unknown',
       date: form.date.value + (timeSeen ? ' at ' + timeSeen : ''),
       special: form.special.value,
@@ -529,6 +587,7 @@ function subscribeToNewPets() {
 // ── INIT ─────────────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', async () => {
+  initDarkMode();
   loadCounter();
   await loadHomePets();
   await loadBrowsePets();
@@ -563,4 +622,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (document.getElementById('near-me')?.checked) loadBrowsePets();
     });
   }
+
+  const sortOrder = document.getElementById('sort-order');
+  if (sortOrder) sortOrder.addEventListener('change', loadBrowsePets);
 });
