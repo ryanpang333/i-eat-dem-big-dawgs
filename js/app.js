@@ -93,7 +93,22 @@ function renderCard(pet) {
   const locationLabel = pet.type === 'lost' ? 'Last seen' : 'Found at';
   const isReunited = pet.status === 'reunited';
   const phoneSafe = escHtml(pet.phone || '');
+  const emailSafe = escHtml(pet.email || '');
+  const phonePrivate = !!pet.phone_hidden;
   const name = escHtml(pet.pet_name || pet.petName || 'Unknown');
+
+  let contactRows = `<p style="margin-top:8px;"><strong>Contact:</strong> ${escHtml(pet.owner_name || pet.ownerName)}</p>`;
+  if (phoneSafe) {
+    contactRows += phonePrivate
+      ? `<p style="font-size:0.85rem;color:#888;margin-top:4px;">📞 <em>Phone hidden by poster</em></p>`
+      : `<p style="font-size:0.85rem;margin-top:4px;">📞 <span id="phone-val-${key}" style="display:none;font-weight:bold;">${phoneSafe}</span><button class="action-btn" id="phone-toggle-${key}" onclick="togglePhone('${key}')">🔒 Show Phone</button></p>`;
+  }
+  if (emailSafe) {
+    contactRows += `<p style="font-size:0.85rem;margin-top:4px;">📧 <span id="email-val-${key}" style="display:none;font-weight:bold;">${emailSafe}</span><button class="action-btn" id="email-toggle-${key}" onclick="toggleEmail('${key}')">🔒 Show Email</button></p>`;
+  }
+  if (!phoneSafe && !emailSafe) {
+    contactRows += `<p style="font-size:0.85rem;color:#888;margin-top:4px;"><em>No contact info provided</em></p>`;
+  }
 
   return `
     <div class="card${isReunited ? ' card-reunited' : ''}">
@@ -109,16 +124,11 @@ function renderCard(pet) {
       <p><strong>Date:</strong> ${escHtml(pet.date)}</p>
       ${pet.special ? `<p><strong>Special:</strong> ${escHtml(pet.special)}</p>` : ''}
       ${pet.reward === true || pet.reward === 'yes' ? `<p style="color:#c62828;font-weight:bold;">Reward offered!</p>` : ''}
-      <p style="margin-top:8px;"><strong>Contact:</strong> ${escHtml(pet.owner_name || pet.ownerName)}</p>
-      <p style="margin-top:6px;font-size:0.85rem;color:#666;">
-        ${phoneSafe
-          ? `📞 <span id="phone-val-${key}" style="display:none;font-weight:bold;">${phoneSafe}</span>
-             <button class="action-btn" id="phone-toggle-${key}" onclick="togglePhone('${key}')">🔒 Show Phone</button>`
-          : `📞 <em>No phone provided</em>`}
-      </p>
+      ${contactRows}
       ${pet.lat && pet.lng ? `<a href="map.html" style="display:inline-block;margin-top:8px;font-size:0.8rem;color:#f97316;">📍 See on map</a>` : ''}
       <div class="card-actions">
-        ${phoneSafe ? `<button class="action-btn" onclick="copyPhone('${phoneSafe}',this)">📋 Copy Phone</button>` : ''}
+        ${phoneSafe && !phonePrivate ? `<button class="action-btn" onclick="copyPhone('${phoneSafe}',this)">📋 Copy Phone</button>` : ''}
+        ${emailSafe ? `<button class="action-btn" onclick="copyEmail('${emailSafe}',this)">📋 Copy Email</button>` : ''}
         <button class="action-btn" onclick="whatsappShare('${key}')">💬 WhatsApp</button>
         <button class="action-btn" onclick="sharePost('${key}')">🔗 Share</button>
         <button class="action-btn" onclick="printFlyer('${key}')">🖨️ Print Flyer</button>
@@ -146,8 +156,25 @@ function togglePhone(key) {
   btn.textContent = hidden ? '🔓 Hide Phone' : '🔒 Show Phone';
 }
 
+function toggleEmail(key) {
+  const val = document.getElementById(`email-val-${key}`);
+  const btn = document.getElementById(`email-toggle-${key}`);
+  if (!val || !btn) return;
+  const hidden = val.style.display === 'none';
+  val.style.display = hidden ? 'inline' : 'none';
+  btn.textContent = hidden ? '🔓 Hide Email' : '🔒 Show Email';
+}
+
 function copyPhone(phone, btn) {
   navigator.clipboard.writeText(phone).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✅ Copied!';
+    setTimeout(() => btn.textContent = orig, 2000);
+  });
+}
+
+function copyEmail(email, btn) {
+  navigator.clipboard.writeText(email).then(() => {
     const orig = btn.textContent;
     btn.textContent = '✅ Copied!';
     setTimeout(() => btn.textContent = orig, 2000);
@@ -159,7 +186,12 @@ function whatsappShare(key) {
   if (!pet) return;
   const name = pet.pet_name || pet.petName || 'Unknown';
   const label = pet.type === 'lost' ? '🔴 LOST PET' : '🟢 FOUND PET';
-  const text = `${label}: ${name} (${pet.animal}) near ${pet.location}. Date: ${pet.date}. Contact: ${pet.owner_name || pet.ownerName}${pet.phone ? ' — ' + pet.phone : ''}`;
+  const contact = [
+    pet.owner_name || pet.ownerName,
+    !pet.phone_hidden && pet.phone ? pet.phone : null,
+    pet.email || null,
+  ].filter(Boolean).join(' — ');
+  const text = `${label}: ${name} (${pet.animal}) near ${pet.location}. Date: ${pet.date}. Contact: ${contact}`;
   window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
 }
 
@@ -167,7 +199,12 @@ function sharePost(key) {
   const pet = petStore.get(key);
   if (!pet) return;
   const name = pet.pet_name || pet.petName || 'Unknown';
-  const text = `${pet.type === 'lost' ? '🔴 LOST' : '🟢 FOUND'}: ${name} (${pet.animal}) near ${pet.location}. Date: ${pet.date}. Contact: ${pet.phone}`;
+  const contact = [
+    pet.owner_name || pet.ownerName,
+    !pet.phone_hidden && pet.phone ? pet.phone : null,
+    pet.email || null,
+  ].filter(Boolean).join(' — ');
+  const text = `${pet.type === 'lost' ? '🔴 LOST' : '🟢 FOUND'}: ${name} (${pet.animal}) near ${pet.location}. Date: ${pet.date}. Contact: ${contact}`;
   if (navigator.share) {
     navigator.share({ title: 'Paw Finder', text });
   } else {
@@ -418,10 +455,18 @@ async function submitLostForm(e) {
         const r = new FileReader(); r.onload = ev => res(ev.target.result); r.readAsDataURL(photoFile);
       });
     }
+    const phone = form.phone?.value.trim();
+    const email = form.email?.value.trim();
+    if (!phone && !email) {
+      alert('Please provide at least a phone number or email so people can contact you.');
+      btn.textContent = 'Post Lost Pet Notice'; btn.disabled = false;
+      return;
+    }
     const locParts = [form.location?.value, form.state?.value, form.country?.value].filter(Boolean);
     const timeSeen = form.time_seen?.value;
     await savePet({
-      type: 'lost', owner_name: form.ownerName.value, phone: form.phone.value,
+      type: 'lost', owner_name: form.ownerName.value, phone: phone || '',
+      email: email || '', phone_hidden: !!form.phone_hidden?.checked,
       pet_name: form.petName.value, animal: form.animal.value, breed: form.breed.value,
       color: form.color.value, size: form.size.value, age: form.age?.value || '', photo_url: photoUrl,
       location: locParts.join(', ') || 'Unknown',
@@ -458,10 +503,18 @@ async function submitFoundForm(e) {
         const r = new FileReader(); r.onload = ev => res(ev.target.result); r.readAsDataURL(photoFile);
       });
     }
+    const phone = form.phone?.value.trim();
+    const email = form.email?.value.trim();
+    if (!phone && !email) {
+      alert('Please provide at least a phone number or email so people can contact you.');
+      btn.textContent = 'Post Found Pet Notice'; btn.disabled = false;
+      return;
+    }
     const locParts = [form.location?.value, form.state?.value, form.country?.value].filter(Boolean);
     const timeSeen = form.time_seen?.value;
     await savePet({
-      type: 'found', owner_name: form.finderName.value, phone: form.phone.value,
+      type: 'found', owner_name: form.finderName.value, phone: phone || '',
+      email: email || '', phone_hidden: !!form.phone_hidden?.checked,
       pet_name: 'Unknown', animal: form.animal.value, breed: '',
       color: form.color.value, size: form.size.value, age: form.age?.value || '', photo_url: photoUrl,
       location: locParts.join(', ') || 'Unknown',
