@@ -57,8 +57,12 @@ async function loadCounter() {
 }
 
 function initDarkMode() {
-  if (localStorage.getItem('pawfinder_theme') === 'dark')
+  const saved = localStorage.getItem('pawfinder_theme');
+  if (saved === 'dark') {
     document.documentElement.setAttribute('data-theme', 'dark');
+  } else if (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  }
   const nav = document.querySelector('nav');
   if (!nav) return;
   const btn = document.createElement('button');
@@ -107,6 +111,7 @@ function renderCard(pet) {
   const label = pet.type === 'lost' ? 'LOST' : 'FOUND';
   const locationLabel = pet.type === 'lost' ? 'Last seen' : 'Found at';
   const isReunited = pet.status === 'reunited';
+  const hasReward = pet.reward === true || pet.reward === 'yes';
   const phoneSafe = escHtml(pet.phone || '');
   const emailSafe = escHtml(pet.email || '');
   const phonePrivate = !!pet.phone_hidden;
@@ -146,9 +151,10 @@ function renderCard(pet) {
   }
 
   return `
-    <div class="card${isReunited ? ' card-reunited' : ''}${isUrgent ? ' card-urgent' : ''}">
+    <div class="card${isReunited ? ' card-reunited' : ''}${isUrgent ? ' card-urgent' : ''}${hasReward && !isReunited ? ' card-reward' : ''}">
       ${isReunited ? '<div class="reunited-banner">🎉 REUNITED!</div>' : ''}
       ${isUrgent ? '<div class="urgent-badge">🚨 URGENT — Missing over a week!</div>' : ''}
+      ${hasReward && !isReunited ? '<div class="reward-banner">💰 REWARD OFFERED</div>' : ''}
       ${gallery}
       <span class="badge-${pet.type}">${label}</span>
       <h3>${name}</h3>
@@ -160,14 +166,16 @@ function renderCard(pet) {
       <p><strong>Date:</strong> ${escHtml(pet.date)}</p>
       ${days !== null ? `<p class="days-counter${isUrgent?' days-urgent':''}">${pet.type==='lost'?'⏱ Missing':'📅 Found'} ${days===0?'today':`${days} day${days!==1?'s':''} ago`}</p>` : ''}
       ${pet.special ? `<p><strong>Special:</strong> ${escHtml(pet.special)}</p>` : ''}
-      ${pet.reward === true || pet.reward === 'yes' ? `<p style="color:#c62828;font-weight:bold;">Reward offered!</p>` : ''}
+      ${hasReward ? `<p style="color:#b45309;font-weight:bold;">💰 Reward offered!</p>` : ''}
       ${contactRows}
       ${pet.lat && pet.lng ? `<a href="map.html" style="display:inline-block;margin-top:8px;font-size:0.8rem;color:#f97316;">📍 See on map</a>` : ''}
       <div class="card-actions">
         ${phoneSafe && !phonePrivate ? `<button class="action-btn" onclick="copyPhone('${phoneSafe}',this)">📋 Copy Phone</button>` : ''}
         ${emailSafe ? `<button class="action-btn" onclick="copyEmail('${emailSafe}',this)">📋 Copy Email</button>` : ''}
         <button class="action-btn" onclick="whatsappShare('${key}')">💬 WhatsApp</button>
-        <button class="action-btn" onclick="sharePost('${key}')">🔗 Share</button>
+        <button class="action-btn" onclick="facebookShare('${key}')">📘 Facebook</button>
+        <button class="action-btn" onclick="twitterShare('${key}')">🐦 X / Twitter</button>
+        <button class="action-btn" onclick="copyPetLink('${key}',this)">🔗 Copy Link</button>
         <button class="action-btn" onclick="printFlyer('${key}')">🖨️ Print Flyer</button>
         ${!isReunited ? `<button class="action-btn btn-spotted" onclick="openSpottingModal('${key}')">👁 Spotted${sightCount?` (${sightCount})`:''}</button>` : ''}
         <button class="action-btn" onclick="openDetailModal('${key}')">🔍 Details</button>
@@ -232,6 +240,32 @@ function whatsappShare(key) {
   ].filter(Boolean).join(' — ');
   const text = `${label}: ${name} (${pet.animal}) near ${pet.location}. Date: ${pet.date}. Contact: ${contact}`;
   window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+}
+
+function facebookShare(key) {
+  const pet = petStore.get(key);
+  if (!pet) return;
+  const url = encodeURIComponent(window.location.href.split('?')[0] + '?pet=' + encodeURIComponent(pet.id || key));
+  window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank', 'width=600,height=400');
+}
+
+function twitterShare(key) {
+  const pet = petStore.get(key);
+  if (!pet) return;
+  const name = pet.pet_name || pet.petName || 'Unknown';
+  const text = `${pet.type === 'lost' ? '🔴 LOST' : '🟢 FOUND'}: ${name} the ${pet.animal} near ${pet.location}. Can you help? 🐾 #PawFinder #LostPet`;
+  window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank', 'width=600,height=400');
+}
+
+function copyPetLink(key, btn) {
+  const pet = petStore.get(key);
+  if (!pet) return;
+  const url = window.location.href.split('?')[0].replace(/[^/]*$/, 'browse.html') + '?pet=' + encodeURIComponent(pet.id || key);
+  navigator.clipboard.writeText(url).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✅ Copied!';
+    setTimeout(() => btn.textContent = orig, 2000);
+  });
 }
 
 function sharePost(key) {
@@ -391,6 +425,13 @@ function openDetailModal(key) {
         <p><strong>👁 Sightings (${sightings.length})</strong></p>
         ${sightings.map(s=>`<p style="font-size:0.85rem;">📍 ${escHtml(s.where)} — ${s.when?new Date(s.when).toLocaleString():''}</p>`).join('')}
       `:'<p style="color:#aaa;font-size:0.85rem;margin-top:10px;">No sightings reported yet.</p>'}
+      <hr class="modal-hr">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">
+        <button class="action-btn" onclick="copyPetLink('${key}',this)">🔗 Copy Link</button>
+        <button class="action-btn" onclick="facebookShare('${key}')">📘 Facebook</button>
+        <button class="action-btn" onclick="twitterShare('${key}')">🐦 X / Twitter</button>
+        <button class="action-btn" onclick="printFlyer('${key}')">🖨️ Print Flyer</button>
+      </div>
     </div>`;
   document.body.appendChild(overlay);
   overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
@@ -503,6 +544,22 @@ function getUserLocation() {
   });
 }
 
+// ── REUNITED TICKER ──────────────────────────────────────────────────────────
+
+async function loadReunitedTicker() {
+  const ticker = document.getElementById('reunited-ticker');
+  if (!ticker) return;
+  const pets = await getPets();
+  const reunited = pets.filter(p => p.reunited || p.status === 'reunited');
+  if (!reunited.length) { ticker.style.display = 'none'; return; }
+  const items = reunited.slice(0, 20).map(p => {
+    const name = p.pet_name || p.petName || 'Unknown';
+    return `<span class="ticker-item">🎉 <strong>${escHtml(name)}</strong> the ${escHtml(p.animal)} reunited in ${escHtml(p.location.split(',').slice(-1)[0].trim() || p.location)}</span>`;
+  }).join('<span class="ticker-sep">•</span>');
+  const inner = ticker.querySelector('.ticker-inner');
+  if (inner) { inner.innerHTML = items + '<span class="ticker-sep">•</span>' + items; }
+}
+
 // ── PAGES ────────────────────────────────────────────────────────────────────
 
 async function loadHomePets() {
@@ -517,6 +574,10 @@ async function loadHomePets() {
   container.innerHTML = pets.map(renderCard).join('');
   pets.filter(p => p.id).forEach(p => loadTips(String(p.id)));
 }
+
+let _browseAllPets = [];
+let _browsePage = 0;
+const BROWSE_PAGE_SIZE = 24;
 
 async function loadBrowsePets() {
   const container = document.getElementById('browse-pets');
@@ -550,7 +611,8 @@ async function loadBrowsePets() {
   }
 
   const sizeFilter = document.getElementById('filter-size')?.value;
-  const colorFilter = document.getElementById('filter-color')?.value.trim().toLowerCase();
+  const activeSwatchColor = document.querySelector('.swatch-btn.swatch-active')?.dataset.color || '';
+  const colorFilter = activeSwatchColor || document.getElementById('filter-color')?.value.trim().toLowerCase() || '';
   if (sizeFilter) pets = pets.filter(p => p.size === sizeFilter);
   if (colorFilter) pets = pets.filter(p => (p.color || '').toLowerCase().includes(colorFilter));
 
@@ -562,8 +624,42 @@ async function loadBrowsePets() {
     container.innerHTML = '<p class="empty-state">No pets found. Try adjusting your search.</p>';
     return;
   }
-  container.innerHTML = pets.map(renderCard).join('');
-  pets.filter(p => p.id).forEach(p => loadTips(String(p.id)));
+
+  _browseAllPets = pets;
+  _browsePage = 0;
+  renderBrowsePage(true);
+}
+
+function renderBrowsePage(reset) {
+  const container = document.getElementById('browse-pets');
+  if (!container) return;
+  const start = _browsePage * BROWSE_PAGE_SIZE;
+  const page = _browseAllPets.slice(start, start + BROWSE_PAGE_SIZE);
+  const remaining = _browseAllPets.length - (start + BROWSE_PAGE_SIZE);
+
+  if (reset) {
+    container.innerHTML = page.map(renderCard).join('');
+  } else {
+    container.querySelector('.load-more-wrap')?.remove();
+    page.forEach(pet => {
+      const tmp = document.createElement('div');
+      tmp.innerHTML = renderCard(pet);
+      container.appendChild(tmp.firstElementChild);
+    });
+  }
+  page.filter(p => p.id).forEach(p => loadTips(String(p.id)));
+
+  if (remaining > 0) {
+    const wrap = document.createElement('div');
+    wrap.className = 'load-more-wrap';
+    wrap.innerHTML = `<button class="action-btn load-more-btn" onclick="loadMoreBrowse()">Load ${Math.min(BROWSE_PAGE_SIZE, remaining)} more <span style="color:#aaa;">(${remaining} remaining)</span></button>`;
+    container.appendChild(wrap);
+  }
+}
+
+function loadMoreBrowse() {
+  _browsePage++;
+  renderBrowsePage(false);
 }
 
 // ── PHOTO INPUT ──────────────────────────────────────────────────────────────
@@ -938,4 +1034,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (filterSize) filterSize.addEventListener('change', loadBrowsePets);
   const filterColor = document.getElementById('filter-color');
   if (filterColor) filterColor.addEventListener('input', loadBrowsePets);
+
+  document.querySelectorAll('.swatch-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.swatch-btn').forEach(b => b.classList.remove('swatch-active'));
+      btn.classList.add('swatch-active');
+      loadBrowsePets();
+    });
+  });
+
+  loadReunitedTicker();
 });

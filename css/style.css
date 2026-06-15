@@ -697,6 +697,100 @@ footer a {
   margin: -8px 0 14px;
 }
 
+/* REWARD BADGE */
+.reward-banner {
+  background: #fef3c7;
+  color: #92400e;
+  text-align: center;
+  padding: 6px;
+  border-radius: 8px 8px 0 0;
+  font-weight: bold;
+  font-size: 0.85rem;
+  margin: -16px -16px 10px -16px;
+}
+.card-reward {
+  border-color: #d97706 !important;
+  box-shadow: 0 0 0 2px #fde68a, 0 4px 16px rgba(217,119,6,0.15);
+}
+
+/* REUNITED TICKER */
+.reunited-ticker {
+  display: flex;
+  align-items: center;
+  background: #f0fdf4;
+  border-top: 2px solid #16a34a;
+  border-bottom: 2px solid #16a34a;
+  overflow: hidden;
+  padding: 10px 0;
+  gap: 12px;
+}
+.ticker-label {
+  white-space: nowrap;
+  font-weight: bold;
+  color: #15803d;
+  padding: 0 16px;
+  flex-shrink: 0;
+}
+.ticker-inner {
+  display: flex;
+  animation: tickerScroll 50s linear infinite;
+  white-space: nowrap;
+  gap: 0;
+}
+.ticker-inner:hover { animation-play-state: paused; }
+.ticker-item {
+  display: inline-block;
+  padding: 0 28px;
+  font-size: 0.9rem;
+  color: #166534;
+}
+.ticker-sep {
+  color: #86efac;
+  padding: 0 6px;
+}
+@keyframes tickerScroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* COLOR SWATCHES */
+.color-swatches {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.swatch-btn {
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: var(--sw, #e5e7eb);
+  color: var(--swt, #374151);
+  transition: transform .15s, box-shadow .15s;
+}
+.swatch-btn:hover { transform: scale(1.08); }
+.swatch-btn.swatch-active {
+  border-color: #f97316;
+  box-shadow: 0 0 0 3px rgba(249,115,22,0.3);
+  transform: scale(1.08);
+}
+
+/* LOAD MORE */
+.load-more-wrap {
+  grid-column: 1 / -1;
+  text-align: center;
+  margin-top: 24px;
+}
+.load-more-btn {
+  padding: 12px 32px !important;
+  font-size: 1rem !important;
+  border-radius: 24px !important;
+}
+
 /* DARK MODE — slate-900 background, sky-400 accent */
 [data-theme="dark"] body { background: #0f172a; color: #e2e8f0; }
 [data-theme="dark"] .section h2 { color: #a78bfa; }
@@ -876,3 +970,11 @@ footer a {
 [data-theme="dark"] .stat-bar-name { color:#94a3b8; }
 [data-theme="dark"] .stat-bar-count { color:#475569; }
 [data-theme="dark"] .photo-extra { border-color:#334155; }
+[data-theme="dark"] .reward-banner { background:#2d1e00; color:#fbbf24; }
+[data-theme="dark"] .card-reward { border-color:#b45309 !important; box-shadow:0 0 0 2px #78350f,0 4px 16px rgba(180,83,9,.2); }
+[data-theme="dark"] .reunited-ticker { background:#0f2a18; border-color:#16a34a; }
+[data-theme="dark"] .ticker-label { color:#4ade80; }
+[data-theme="dark"] .ticker-item { color:#86efac; }
+[data-theme="dark"] .swatch-btn { border-color:#334155; }
+[data-theme="dark"] .swatch-btn.swatch-active { border-color:#a78bfa; box-shadow:0 0 0 3px rgba(167,139,250,.3); }
+[data-theme="dark"] .load-more-btn { background:#1e293b; border-color:#475569; color:#e2e8f0; }
