@@ -6,29 +6,134 @@
   function ri(lo, hi) { return Math.floor(rng() * (hi - lo + 1)) + lo; }
   function chance(p) { return rng() < p; }
 
-  const FIRST = ['Emma','Liam','Olivia','Noah','Ava','Sophia','James','Isabella','Oliver','Mia',
-    'Benjamin','Charlotte','Elijah','Amelia','Lucas','Harper','Mason','Evelyn','Logan','Aiden',
-    'Sofia','Jackson','Ella','Sebastian','Scarlett','Ethan','Victoria','Michael','Luna','Owen',
-    'Grace','Samuel','Chloe','Ryan','Penelope','Nathan','Riley','Julian','Zoey','Caleb',
-    'Nora','Isaiah','Lily','Ezra','Eleanor','Wyatt','Hannah','Andrew','Lillian','Lincoln',
-    'Addison','Daniel','Aubrey','Gabriel','Ellie','Henry','Stella','Carter','Natalie','Dylan',
-    'Zoe','Jayden','Leah','John','Hazel','Luke','Violet','Anthony','Aurora','Isaac','Savannah',
-    'Dylan','Audrey','Grayson','Brooklyn','Levi','Bella','Joshua','Claire','Christopher','Skylar',
-    'Angel','Lucy','Andrew','Paisley','Josiah','Everly','Eli','Anna','Jaxon','Caroline',
-    'Connor','Genesis','Cameron','Kennedy','Aaron','Samantha','Adrian','Hailey','Jeremiah','Alice',
-    'Nolan','Sarah','Charles','Naomi','Dominic','Aaliyah','Jonathan','Elena','Mateo','Abigail',
-    'Ezekiel','Maya','Thomas','Kylie','Robert','Ariana','Tyler','Nevaeh','Joshua','Layla'];
+  const NAMES = {
+    'United States': {
+      f:['Emma','Liam','Olivia','Noah','Ava','Sophia','James','Isabella','Oliver','Mia','Benjamin','Charlotte','Elijah','Amelia','Lucas','Harper','Mason','Evelyn','Logan','Aiden','Michael','Emily','Daniel','Madison','Matthew','Chloe','Ryan','Abigail','Tyler','Grace'],
+      l:['Smith','Johnson','Williams','Brown','Jones','Garcia','Miller','Davis','Wilson','Moore','Taylor','Anderson','Thomas','Jackson','White','Harris','Martin','Thompson','Young','Allen','King','Wright','Scott','Hill','Green','Adams','Baker','Hall','Rivera','Campbell']
+    },
+    'Canada': {
+      f:['Liam','Olivia','Noah','Emma','William','Ava','Lucas','Isabella','Ethan','Sophia','Mason','Charlotte','Logan','Amelia','James','Harper','Benjamin','Evelyn','Owen','Abigail','Nathan','Scarlett','Jack','Emily','Alexander','Lily','Carter','Hannah','Luke','Zoe'],
+      l:['Smith','Brown','Martin','Roy','Côté','Tremblay','Gagnon','Wilson','Taylor','Anderson','Thomas','Lee','Johnson','White','Harris','Thompson','Young','Allen','King','Wright','Scott','Lavoie','Belanger','Leblanc','Bouchard','Morin','Fortin','Gauthier','Simard','Ouellet']
+    },
+    'United Kingdom': {
+      f:['Oliver','Amelia','George','Isla','Harry','Olivia','Jack','Ava','Charlie','Emily','James','Jessica','Oscar','Sophia','William','Grace','Noah','Lily','Thomas','Evie','Alfie','Poppy','Archie','Isabella','Jacob','Sophie','Ethan','Mia','Joshua','Chloe'],
+      l:['Smith','Jones','Williams','Taylor','Brown','Davies','Evans','Wilson','Thomas','Roberts','Johnson','Lewis','Walker','Robinson','Wood','Thompson','White','Watson','Jackson','Wright','Green','Harris','Cooper','King','Lee','Martin','Clarke','James','Morgan','Edwards']
+    },
+    'Ireland': {
+      f:['Liam','Emma','Conor','Aoife','Sean','Niamh','Patrick','Ciara','Oisín','Sinéad','Ciarán','Caoimhe','Darragh','Siobhán','Fionn','Roisín','Cathal','Éabha','Tadhg','Áine','Seán','Méabh','Diarmuid','Orla','Cillian','Clodagh','Ruairí','Aoibheann','Pádraig','Fionnuala'],
+      l:['Murphy','Kelly','O\'Brien','Walsh','Smith','O\'Sullivan','Ryan','Burke','O\'Connor','Byrne','O\'Neill','Doyle','McCarthy','Gallagher','O\'Doherty','Kennedy','Lynch','Murray','Quinn','Moore','McLaughlin','Carroll','Connolly','O\'Reilly','Daly','Collins','O\'Callaghan','Dunne','Farrell','Brennan']
+    },
+    'Australia': {
+      f:['Oliver','Charlotte','William','Olivia','Jack','Ava','Noah','Mia','Leo','Amelia','Henry','Isla','Lucas','Grace','Thomas','Chloe','James','Sophie','Mason','Ella','Ethan','Emily','Liam','Zoe','Jackson','Isabella','Jacob','Hannah','Logan','Harper'],
+      l:['Smith','Jones','Williams','Brown','Wilson','Taylor','Anderson','Thomas','White','Harris','Martin','Thompson','Young','Allen','King','Wright','Scott','Robinson','Walker','Wood','Hill','Green','Mitchell','Carter','Bennett','Turner','Parker','Evans','Phillips','Edwards']
+    },
+    'New Zealand': {
+      f:['Oliver','Charlotte','Noah','Olivia','Jack','Isabella','William','Ava','James','Sophie','Lucas','Amelia','Thomas','Grace','Liam','Emily','Ethan','Lily','Benjamin','Ella','Hunter','Zoe','Logan','Aria','Mason','Hannah','Jacob','Chloe','Henry','Mia'],
+      l:['Smith','Jones','Williams','Brown','Wilson','Taylor','Anderson','White','Johnson','Martin','Thompson','Young','Allen','King','Wright','Scott','Walker','Harris','Robinson','Davies','Moore','Edwards','Mitchell','Clarke','Evans','Hall','Turner','Carter','Baker','Cooper']
+    },
+    'Germany': {
+      f:['Lukas','Lena','Leon','Anna','Maximilian','Emma','Paul','Mia','Felix','Hannah','Jonas','Leonie','Noah','Lea','Ben','Laura','Elias','Sarah','Tim','Julia','Finn','Katharina','Moritz','Sophie','Jan','Lisa','Niklas','Marie','Tobias','Nina'],
+      l:['Müller','Schmidt','Schneider','Fischer','Weber','Meyer','Wagner','Becker','Schulz','Hoffmann','Schäfer','Koch','Bauer','Richter','Klein','Wolf','Schröder','Neumann','Schwarz','Zimmermann','Braun','Krüger','Hofmann','Hartmann','Lange','Schmitt','Werner','Schmitz','Krause','Meier']
+    },
+    'Austria': {
+      f:['Lukas','Anna','Maximilian','Marie','Florian','Sophie','Tobias','Julia','Michael','Laura','Stefan','Lena','Patrick','Eva','Thomas','Sarah','Christoph','Lisa','Markus','Hannah','Daniel','Katharina','David','Claudia','Johannes','Barbara','Andreas','Elisabeth','Simon','Monika'],
+      l:['Huber','Gruber','Bauer','Wagner','Müller','Pichler','Steiner','Moser','Mayer','Hofer','Leitner','Berger','Brunner','Wimmer','Eder','Winkler','Weber','Schwarz','Reiter','Mayr','Koller','Egger','Fröhlich','Maier','Lehner','Stadler','Haas','Frank','Hackl','Schneider']
+    },
+    'France': {
+      f:['Emma','Liam','Chloé','Lucas','Inès','Nathan','Léa','Hugo','Manon','Louis','Camille','Théo','Julie','Tom','Lucie','Noah','Jade','Maxime','Sarah','Antoine','Laura','Baptiste','Pauline','Romain','Alice','Quentin','Marie','Alexis','Charlotte','Florian'],
+      l:['Martin','Bernard','Thomas','Petit','Robert','Richard','Durand','Dubois','Moreau','Laurent','Simon','Michel','Lefebvre','Leroy','Roux','David','Bertrand','Morel','Fournier','Girard','Bonnet','Dupont','Lambert','Fontaine','Rousseau','Vincent','Muller','Lefevre','Faure','André']
+    },
+    'Netherlands': {
+      f:['Liam','Emma','Noah','Olivia','Lucas','Mia','Levi','Ava','Sem','Sara','Finn','Julia','Daan','Noor','Bram','Tess','Jesse','Anna','Lars','Fleur','Thijs','Sophie','Milan','Floor','Tom','Roos','Julian','Noa','Luuk','Femke'],
+      l:['de Vries','van den Berg','van Dijk','Bakker','Janssen','Visser','Smit','Meijer','de Boer','Mulder','de Groot','Bos','Vos','Peters','Hendriks','van Leeuwen','Dijkstra','Brouwer','de Wit','van der Berg','Kuijpers','van der Linden','Kok','Jacobs','Vermeer','Graaf','Laan','Kuiper','Hermans','Willems']
+    },
+    'Belgium': {
+      f:['Liam','Emma','Louis','Olivia','Noah','Lucie','Arthur','Jade','Nathan','Camille','Lucas','Inès','Tom','Chloé','Maxime','Laura','Julien','Sarah','Antoine','Alice','Romain','Julie','Thomas','Léa','Hugo','Marie','Baptiste','Manon','Simon','Charlotte'],
+      l:['Peeters','Janssen','Maes','Jacobs','Mertens','Willems','Claes','Goossens','Wouters','Martens','Leclercq','Dubois','Simon','Laurent','Lecomte','Dupont','Renard','Fontaine','Bastin','Collignon','De Smedt','Vermeersch','Bogaert','Claeys','Desmet','Declercq','Nijs','Pieters','Raes','Aerts']
+    },
+    'Spain': {
+      f:['Lucía','Hugo','Sofía','Mateo','María','Martín','Martina','Alejandro','Julia','Daniel','Paula','Pablo','Valentina','Álvaro','Emma','Diego','Claudia','Adrián','Alba','Carlos','Noa','Javier','Sara','David','Valeria','Sergio','Carla','Miguel','Inés','Marcos'],
+      l:['García','Martínez','López','Sánchez','González','Pérez','Rodríguez','Fernández','Jiménez','Ruiz','Hernández','Díaz','Álvarez','Moreno','Muñoz','Romero','Alonso','Gutiérrez','Navarro','Torres','Domínguez','Vásquez','Ramos','Gil','Ramírez','Serrano','Blanco','Suárez','Molina','Morales']
+    },
+    'Italy': {
+      f:['Francesco','Sofia','Leonardo','Giulia','Lorenzo','Martina','Alessandro','Aurora','Andrea','Alice','Matteo','Ginevra','Gabriele','Emma','Riccardo','Giorgia','Edoardo','Greta','Federico','Chiara','Luca','Beatrice','Tommaso','Federica','Mattia','Eleonora','Marco','Sara','Jacopo','Valentina'],
+      l:['Rossi','Ferrari','Esposito','Bianchi','Romano','Colombo','Ricci','Marino','Greco','Bruno','Gallo','Conti','De Luca','Mancini','Costa','Giordano','Rizzo','Lombardi','Moretti','Barbieri','Fontana','Santoro','Marini','Rinaldi','Caruso','Ferretti','Ferrara','Gatti','Martini','Leone']
+    },
+    'Portugal': {
+      f:['João','Maria','Rodrigo','Beatriz','Martim','Inês','Tomás','Francisca','Francisco','Ana','Afonso','Leonor','Diogo','Mariana','Santiago','Catarina','Guilherme','Sofia','Pedro','Carolina','Luís','Filipa','Miguel','Rita','António','Marta','Rafael','Sara','André','Mafalda'],
+      l:['Silva','Santos','Ferreira','Pereira','Oliveira','Costa','Rodrigues','Martins','Sousa','Fernandes','Gonçalves','Gomes','Lopes','Marques','Carvalho','Almeida','Araújo','Melo','Neves','Pinto','Machado','Correia','Mendes','Teixeira','Monteiro','Fonseca','Moreira','Pires','Lima','Simões']
+    },
+    'Singapore': {
+      f:['Wei','Jia','Ming','Li','Xin','Hui','Jun','Yan','Zhen','Mei','Ahmad','Siti','Nur','Rajan','Priya','Kavya','Darren','Rachel','Marcus','Stephanie','Daniel','Nicole','Brandon','Jasmine','Ethan','Chloe','Ryan','Vanessa','Joshua','Michelle'],
+      l:['Tan','Lee','Ng','Lim','Wong','Chan','Koh','Ong','Teo','Chua','Ho','Goh','Yeo','Low','Sim','Soh','Tay','Yap','Quek','Seah','Phua','Nair','Krishnan','Rajah','Kumar','Devan','Ramesh','Hassan','Ibrahim','Rahman']
+    },
+    'India': {
+      f:['Rahul','Priya','Arjun','Anjali','Rohan','Deepika','Vikram','Neha','Aditya','Pooja','Kiran','Kavya','Sanjay','Asha','Nikhil','Divya','Rajesh','Meera','Suresh','Sunita','Aarav','Diya','Vivaan','Ananya','Aakash','Shreya','Ishaan','Riya','Vihaan','Avni'],
+      l:['Sharma','Patel','Singh','Kumar','Gupta','Joshi','Agarwal','Verma','Mehta','Shah','Chauhan','Pandey','Mishra','Yadav','Tiwari','Reddy','Nair','Iyer','Krishnan','Pillai','Chatterjee','Banerjee','Das','Bose','Sen','Rao','Kulkarni','Desai','Patil','Jain']
+    },
+    'Japan': {
+      f:['Haruto','Yui','Sota','Hina','Yuto','Rin','Riku','Mio','Hayato','Akari','Kaito','Nana','Shota','Mei','Ren','Aoi','Sora','Sakura','Yuki','Hana','Taiga','Koharu','Hiroto','Yuna','Ryota','Hinata','Daichi','Nanami','Naoki','Misaki'],
+      l:['Sato','Suzuki','Takahashi','Tanaka','Watanabe','Ito','Yamamoto','Nakamura','Kobayashi','Kato','Yoshida','Yamada','Sasaki','Yamaguchi','Matsumoto','Inoue','Kimura','Hayashi','Shimizu','Yamazaki','Mori','Abe','Ikeda','Hashimoto','Yamashita','Ishikawa','Nakajima','Maeda','Fujita','Ogawa']
+    },
+    'South Korea': {
+      f:['Minho','Jisoo','Seojun','Jimin','Hyunwoo','Minji','Junho','Yuna','Jaesung','Soyeon','Taehyung','Dahyun','Sehun','Chaeyoung','Donghyun','Nayeon','Yoongi','Seolhyun','Jiwon','Hyeri','Jiho','Eunji','Jaehyun','Irene','Jungkook','Wendy','Wooyoung','Seulgi','Yugyeom','Joy'],
+      l:['Kim','Lee','Park','Choi','Jung','Kang','Cho','Yoon','Chang','Lim','Han','Oh','Seo','Shin','Kwon','Hwang','Ahn','Song','Hong','Moon','Jang','Bae','Im','Ryu','Nam','Baek','Ha','Heo','Jeon','Yoo']
+    },
+    'China': {
+      f:['Wei','Fang','Yang','Jing','Li','Xiao','Hua','Lei','Mei','Hong','Xin','Ping','Jun','Feng','Hui','Tao','Yan','Zhen','Qing','Xue','Hao','Ling','Bo','Rui','Jian','Yun','Kun','Shu','Lan','Min'],
+      l:['Wang','Li','Zhang','Liu','Chen','Yang','Huang','Zhao','Wu','Zhou','Xu','Sun','Ma','Zhu','Hu','Lin','Guo','He','Gao','Luo','Zheng','Liang','Xie','Tang','Han','Cao','Deng','Xiao','Peng','Dong']
+    },
+    'Indonesia': {
+      f:['Budi','Siti','Agus','Dewi','Eko','Wati','Ahmad','Sri','Hendra','Indah','Rian','Putri','Reza','Dian','Bambang','Ani','Joko','Ratna','Fajar','Nurul','Bagas','Intan','Rizky','Ayu','Dimas','Nadia','Wahyu','Sari','Andi','Lestari'],
+      l:['Santoso','Wijaya','Suharto','Kusuma','Pratama','Wibowo','Setiawan','Putra','Handoko','Rahayu','Susanto','Wahyudi','Kurniawan','Hidayat','Nugroho','Saputra','Hendrayana','Gunawan','Halim','Sutrisno','Suryadi','Budiman','Hartono','Salim','Tanaka','Sihombing','Manurung','Nasution','Harahap','Pardede']
+    },
+    'Philippines': {
+      f:['Maria','Jose','Juan','Ana','Eduardo','Fernando','Isabel','Rosa','Miguel','Gloria','Pedro','Carmen','Ramon','Teresa','Mark','Grace','Liza','Rico','Maricel','Jun','Gina','Allan','Rowena','Rex','Lea','Arnel','Jenny','Rodel','Cheryl','Dennis'],
+      l:['Santos','Reyes','Cruz','Bautista','Ocampo','Garcia','Gonzales','Hernandez','Flores','Ramos','Dela Cruz','Aquino','Mendoza','Torres','Castillo','Villanueva','Guevarra','Soriano','Dizon','Manalo','Pascual','Reyes','Domingo','Navarro','San Juan','Santiago','Bernardo','Magno','Delos Santos','Rivera']
+    },
+    'Thailand': {
+      f:['Somchai','Malee','Somsak','Nong','Lek','Daeng','Wan','Pom','Nok','Joy','Fon','Pim','Mint','Art','Bank','Nid','Yai','Kai','Nan','Palm','Arm','Beam','Gift','Bow','Bew','Dear','Earth','Fame','Golf','Kwan'],
+      l:['Charoenrat','Srisuk','Phongphit','Booncherd','Kittikul','Wongprasert','Sombat','Phanichphant','Leelahanon','Rattanakorn','Sukhonthapatipak','Pornprapha','Narongsak','Jiraprapa','Kanchana','Sukanya','Ratchanee','Siriporn','Nanthida','Wannapha','Chaiyasit','Jiraporn','Suriya','Panya','Chaiwat','Apinya','Thidarat','Supawan','Saowapa','Piyanuch']
+    },
+    'Brazil': {
+      f:['João','Ana','Pedro','Maria','Lucas','Mariana','Matheus','Camila','Gustavo','Juliana','Felipe','Fernanda','Gabriel','Amanda','Rafael','Beatriz','Thiago','Larissa','Bruno','Isabela','Letícia','Rodrigo','Natália','Eduardo','Carolina','Leonardo','Gabriela','Henrique','Bruna','Diego'],
+      l:['Silva','Santos','Oliveira','Souza','Rodrigues','Ferreira','Alves','Pereira','Lima','Gomes','Costa','Ribeiro','Martins','Carvalho','Almeida','Lopes','Sousa','Fernandes','Vieira','Barbosa','Rocha','Dias','Monteiro','Cardoso','Mendes','Cunha','Teixeira','Freitas','Nascimento','Pinto']
+    },
+    'Argentina': {
+      f:['Martín','Valentina','Santiago','Camila','Mateo','Sofía','Facundo','Florencia','Nicolás','Lucía','Diego','Agustina','Tomás','Micaela','Gustavo','Romina','Pablo','Natalia','Carlos','Valeria','Rodrigo','Paola','Mariano','Gabriela','Sebastián','Cecilia','Leandro','Verónica','Ezequiel','Claudia'],
+      l:['González','Rodríguez','García','López','Martínez','Fernández','Pérez','Romero','Sosa','Torres','Ruiz','Flores','Acosta','Medina','Herrera','Molina','Morales','Díaz','Castro','Vargas','Jiménez','Suárez','Ramos','Álvarez','Gutiérrez','Gómez','Ortiz','Muñoz','Cabrera','Espínola']
+    },
+    'Chile': {
+      f:['Matías','Valentina','Sebastián','Camila','Diego','Sofía','Nicolás','Catalina','Felipe','Francisca','Benjamín','Constanza','Pablo','Isidora','Rodrigo','Javiera','Tomás','Daniela','Ignacio','Antonia','Agustín','Fernanda','Cristóbal','Macarena','Javier','Martina','Andrés','Florencia','Lucas','Paula'],
+      l:['Muñoz','González','Rojas','Díaz','Pérez','Soto','Contreras','Silva','Martínez','Sepúlveda','Morales','Torres','Flores','Rivera','Fuentes','Herrera','Miranda','Gómez','Reyes','Gutiérrez','Castro','Vargas','Jiménez','Fernández','López','Espinoza','Rodríguez','Poblete','Pizarro','Valenzuela']
+    },
+    'Mexico': {
+      f:['José','María','Juan','Ana','Miguel','Guadalupe','Carlos','Claudia','Ricardo','Patricia','Roberto','Sandra','Jorge','Teresa','Antonio','Rosa','Luis','Jessica','Eduardo','Elizabeth','Fernando','Adriana','Alejandro','Verónica','Francisco','Daniela','Arturo','Leticia','Manuel','Karla'],
+      l:['García','Martínez','Rodríguez','Hernández','López','González','Pérez','Sánchez','Ramírez','Torres','Flores','Díaz','Cruz','Morales','Reyes','Gutiérrez','Castillo','Jiménez','Vargas','Medina','Aguilar','Ortiz','Chávez','Ramos','Herrera','Mendoza','Ruiz','Rivera','Alvarado','Romero']
+    },
+    'South Africa': {
+      f:['Themba','Zanele','Sipho','Nomsa','Bongani','Nhlanhla','Sifiso','Lerato','Ntombi','Lungelo','Jan','Pieter','Riaan','Anel','Liezel','Charmaine','David','Sarah','Michael','Emma','Deon','Kobus','Hein','Marna','Yusuf','Fatima','Priya','Ashwin','Naledi','Karabo'],
+      l:['Dlamini','Nkosi','Khumalo','Mokoena','Mthembu','Sithole','Zulu','Nxumalo','Shabalala','Mahlangu','van der Merwe','Botha','Pretorius','du Plessis','Meyer','Venter','Pietersen','Joubert','Fourie','Nel','Patel','Singh','Khan','Mohammed','Okonkwo','Adeyemi','Abubakar','Mensah','Diallo','Traoré']
+    },
+    'Nigeria': {
+      f:['Adebayo','Chioma','Emeka','Ngozi','Tunde','Adaeze','Yetunde','Chukwuemeka','Sola','Ifeoma','Musa','Fatima','Ibrahim','Aisha','Yusuf','Amina','Funmi','Nnamdi','Folake','Chinwe','Ade','Uju','Kunle','Nnenna','Femi','Obiageli','Seun','Chinyere','Wale','Akachi'],
+      l:['Okonkwo','Adeyemi','Balogun','Ibrahim','Okafor','Abubakar','Chukwu','Eze','Nwosu','Olawale','Adeleke','Ogundipe','Babatunde','Nwachukwu','Afolabi','Ogunyemi','Adeniyi','Lawal','Salami','Oyewole','Mohammed','Usman','Musa','Hassan','Suleiman','Aliyu','Garba','Yusuf','Abdullahi','Idris']
+    },
+    'Kenya': {
+      f:['Wanjiru','Kamau','Njeri','Odhiambo','Akinyi','Mwangi','Wambui','Otieno','Nyawira','Kimani','Adhiambo','Chebet','Korir','Chepkoech','Kibet','Faith','Grace','John','David','James','Peter','Mary','Sarah','Ruth','Hannah','Emmanuel','Joseph','Samuel','Daniel','Esther'],
+      l:['Mwangi','Ochieng','Kamau','Otieno','Kipchoge','Ndegwa','Ngugi','Omondi','Waweru','Kariuki','Njoroge','Muthoni','Wanjiku','Auma','Onyango','Adhiambo','Mutua','Kiprotich','Langat','Cheruiyot','Korir','Yego','Kiptoo','Mutai','Ruto','Koros','Sang','Sigei','Bett','Rotich']
+    },
+    'Egypt': {
+      f:['Mohamed','Fatima','Ahmed','Nour','Mahmoud','Sara','Ali','Mariam','Omar','Yasmine','Ibrahim','Dina','Youssef','Rana','Hassan','Heba','Khaled','Mona','Amr','Eman','Mostafa','Reem','Tarek','Nadia','Karim','Layla','Sherif','Mai','Walid','Doha'],
+      l:['Hassan','Ahmed','Mohamed','Ibrahim','Ali','Mahmoud','Sayed','Mostafa','Khalil','Mansour','Farouk','Nasser','Saleh','Taha','Youssef','Kamel','Zaki','Amin','Fathy','Ramadan','Abd El-Rahman','El-Sayed','El-Sharkawy','Abdallah','Gomaa','Soliman','Osman','Badr','Gaber','Hegazy']
+    },
+  };
 
-  const LAST = ['Smith','Johnson','Williams','Brown','Jones','Garcia','Miller','Davis','Wilson',
-    'Moore','Taylor','Anderson','Thomas','Jackson','White','Harris','Martin','Thompson','Young',
-    'Allen','King','Wright','Scott','Torres','Nguyen','Hill','Flores','Green','Adams','Nelson',
-    'Baker','Hall','Rivera','Campbell','Mitchell','Carter','Roberts','Gomez','Phillips','Evans',
-    'Turner','Diaz','Parker','Cruz','Edwards','Collins','Reyes','Stewart','Morris','Morales',
-    'Murphy','Cook','Rogers','Gutierrez','Ortiz','Morgan','Cooper','Peterson','Bailey','Reed',
-    'Kelly','Howard','Ramos','Kim','Cox','Ward','Richardson','Watson','Brooks','Chavez',
-    'Wood','James','Bennett','Gray','Mendoza','Ruiz','Hughes','Price','Alvarez','Castillo',
-    'Sanders','Patel','Myers','Long','Ross','Foster','Jimenez','Powell','Jenkins','Perry',
-    'Russell','Sullivan','Bell','Coleman','Butler','Henderson','Barnes','Gonzales','Fisher','Vasquez'];
+  // Fallback for any country not listed above
+  const NAMES_FALLBACK = {
+    f:['Emma','Liam','Olivia','Noah','Ava','Sophia','James','Isabella','Oliver','Mia','Benjamin','Charlotte','Lucas','Harper','Mason','Evelyn'],
+    l:['Smith','Johnson','Williams','Brown','Jones','Garcia','Miller','Davis','Wilson','Moore','Taylor','Anderson','Thomas','White','Harris','Martin']
+  };
 
   const DOG_BREEDS = ['Labrador Retriever','Golden Retriever','German Shepherd','Poodle','Beagle',
     'Bulldog','Husky','Chihuahua','Border Collie','Shih Tzu','Dachshund','Boxer','Rottweiler',
@@ -152,8 +257,9 @@
     const daysAgo = ri(1, 700);
     const postDate = new Date(now - daysAgo * 86400000);
     const dateStr = postDate.toISOString().split('T')[0];
-    const firstName = pick(FIRST);
-    const lastName = pick(LAST);
+    const nameSet = NAMES[region.country] || NAMES_FALLBACK;
+    const firstName = pick(nameSet.f);
+    const lastName = pick(nameSet.l);
     const hasPhone = chance(0.75);
     const hasEmail = !hasPhone || chance(0.6);
 

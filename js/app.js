@@ -1,5 +1,8 @@
 // ── DATA ─────────────────────────────────────────────────────────────────────
 
+// '' means "Worldwide / show all". Otherwise the name of the chosen country.
+let _selectedCountry = localStorage.getItem('pawfinder_country') || '';
+
 async function getPets() {
   const demo = (window.DEMO_PETS || []).map(p => ({ ...p, location: p._fullLocation || p.location }));
   let real = [];
@@ -12,7 +15,12 @@ async function getPets() {
   } else {
     real = JSON.parse(localStorage.getItem('pawfinder_pets') || '[]').reverse();
   }
-  return [...real, ...demo];
+  let combined = [...real, ...demo];
+  // Filter to the chosen country. Real user posts (no country field) always show.
+  if (_selectedCountry) {
+    combined = combined.filter(p => !p.country || p.country === _selectedCountry);
+  }
+  return combined;
 }
 
 async function savePet(pet) {
@@ -968,10 +976,79 @@ function subscribeToNewPets() {
   ).subscribe();
 }
 
+// ── COUNTRY SELECTION ─────────────────────────────────────────────────────────
+
+// Map country name → flag emoji (built from ISO codes so it covers everywhere).
+const COUNTRY_FLAGS = {
+  'United States':'🇺🇸','Canada':'🇨🇦','United Kingdom':'🇬🇧','Ireland':'🇮🇪','Australia':'🇦🇺',
+  'New Zealand':'🇳🇿','Germany':'🇩🇪','Austria':'🇦🇹','France':'🇫🇷','Netherlands':'🇳🇱',
+  'Belgium':'🇧🇪','Spain':'🇪🇸','Italy':'🇮🇹','Portugal':'🇵🇹','Singapore':'🇸🇬','India':'🇮🇳',
+  'Japan':'🇯🇵','South Korea':'🇰🇷','China':'🇨🇳','Indonesia':'🇮🇩','Philippines':'🇵🇭',
+  'Thailand':'🇹🇭','Brazil':'🇧🇷','Argentina':'🇦🇷','Chile':'🇨🇱','Mexico':'🇲🇽',
+  'South Africa':'🇿🇦','Nigeria':'🇳🇬','Kenya':'🇰🇪','Egypt':'🇪🇬',
+};
+
+function flagFor(country) { return COUNTRY_FLAGS[country] || '🏳️'; }
+
+// All countries that actually have pets, sorted alphabetically.
+function getCountryList() {
+  const set = new Set((window.DEMO_PETS || []).map(p => p.country).filter(Boolean));
+  return [...set].sort((a, b) => a.localeCompare(b));
+}
+
+function showCountryPicker(force) {
+  const countries = getCountryList();
+  const current = _selectedCountry;
+  const options = ['<option value="">🌍 Worldwide — show every country</option>']
+    .concat(countries.map(c =>
+      `<option value="${escHtml(c)}"${c === current ? ' selected' : ''}>${flagFor(c)} ${escHtml(c)}</option>`
+    )).join('');
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal-box" style="max-width:430px;text-align:center;">
+      ${force ? '' : '<button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">✕</button>'}
+      <div style="font-size:2.8rem;line-height:1;">🌍🐾</div>
+      <h2 style="margin:10px 0 4px;">Welcome to Paw Finder!</h2>
+      <p style="color:#888;margin:0 0 4px;">Choose your country so we can show you the lost &amp; found pets near you.</p>
+      <select id="country-picker-select" style="width:100%;padding:12px;border:2px solid #f97316;border-radius:8px;font-size:1rem;margin:18px 0;background:#fff;">
+        ${options}
+      </select>
+      <button class="submit-btn" style="width:100%;" onclick="saveCountryChoice()">Continue →</button>
+      <p style="color:#bbb;font-size:0.78rem;margin-top:12px;">You can change this any time with the 🌍 button in the menu.</p>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay && !force) overlay.remove(); });
+}
+
+function saveCountryChoice() {
+  const sel = document.getElementById('country-picker-select');
+  if (!sel) return;
+  localStorage.setItem('pawfinder_country', sel.value);
+  localStorage.setItem('pawfinder_country_set', '1');
+  location.reload();
+}
+
+function initCountryButton() {
+  const nav = document.querySelector('nav');
+  if (!nav) return;
+  const btn = document.createElement('button');
+  btn.className = 'dark-toggle country-btn';
+  btn.textContent = _selectedCountry ? `${flagFor(_selectedCountry)} ${_selectedCountry}` : '🌍 Worldwide';
+  btn.title = 'Change your country';
+  btn.onclick = () => showCountryPicker(false);
+  nav.appendChild(btn);
+}
+
 // ── INIT ─────────────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', async () => {
   initDarkMode();
+  initCountryButton();
+  // First visit: ask which country before anything else.
+  if (!localStorage.getItem('pawfinder_country_set')) {
+    showCountryPicker(true);
+  }
   loadCounter();
   await loadHomePets();
   await loadBrowsePets();
@@ -1002,6 +1079,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+
+  // Pre-select the poster's country on the post forms.
+  if (_selectedCountry) {
+    const countrySelect = document.getElementById('country');
+    if (countrySelect && [...countrySelect.options].some(o => o.value === _selectedCountry)) {
+      countrySelect.value = _selectedCountry;
+    }
   }
 
   const lostForm = document.getElementById('lost-form');

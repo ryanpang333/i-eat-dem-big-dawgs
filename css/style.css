@@ -675,6 +675,8 @@ footer a {
   white-space: nowrap;
 }
 .dark-toggle:hover { background: rgba(255,255,255,0.35); }
+.country-btn { background: rgba(255,255,255,0.32); border-color: rgba(255,255,255,0.6); }
+.country-btn:hover { background: rgba(255,255,255,0.5); }
 
 /* PRIVACY ROW */
 .privacy-row {
@@ -720,9 +722,7 @@ footer a {
   background: #f0fdf4;
   border-top: 2px solid #16a34a;
   border-bottom: 2px solid #16a34a;
-  overflow: hidden;
   padding: 10px 0;
-  gap: 12px;
 }
 .ticker-label {
   white-space: nowrap;
@@ -730,12 +730,17 @@ footer a {
   color: #15803d;
   padding: 0 16px;
   flex-shrink: 0;
+  border-right: 2px solid #bbf7d0;
+}
+.ticker-track {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
 }
 .ticker-inner {
   display: flex;
   animation: tickerScroll 50s linear infinite;
   white-space: nowrap;
-  gap: 0;
 }
 .ticker-inner:hover { animation-play-state: paused; }
 .ticker-item {
