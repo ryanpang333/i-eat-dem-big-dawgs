@@ -978,17 +978,45 @@ function subscribeToNewPets() {
 
 // ── COUNTRY SELECTION ─────────────────────────────────────────────────────────
 
-// Map country name → flag emoji (built from ISO codes so it covers everywhere).
-const COUNTRY_FLAGS = {
-  'United States':'🇺🇸','Canada':'🇨🇦','United Kingdom':'🇬🇧','Ireland':'🇮🇪','Australia':'🇦🇺',
-  'New Zealand':'🇳🇿','Germany':'🇩🇪','Austria':'🇦🇹','France':'🇫🇷','Netherlands':'🇳🇱',
-  'Belgium':'🇧🇪','Spain':'🇪🇸','Italy':'🇮🇹','Portugal':'🇵🇹','Singapore':'🇸🇬','India':'🇮🇳',
-  'Japan':'🇯🇵','South Korea':'🇰🇷','China':'🇨🇳','Indonesia':'🇮🇩','Philippines':'🇵🇭',
-  'Thailand':'🇹🇭','Brazil':'🇧🇷','Argentina':'🇦🇷','Chile':'🇨🇱','Mexico':'🇲🇽',
-  'South Africa':'🇿🇦','Nigeria':'🇳🇬','Kenya':'🇰🇪','Egypt':'🇪🇬',
+// Country name → ISO-2 code. The flag emoji is generated from the code.
+const COUNTRY_ISO = {
+  'United States':'US','Canada':'CA','United Kingdom':'GB','Ireland':'IE','Australia':'AU',
+  'New Zealand':'NZ','Germany':'DE','Austria':'AT','France':'FR','Netherlands':'NL',
+  'Belgium':'BE','Spain':'ES','Italy':'IT','Portugal':'PT','Singapore':'SG','India':'IN',
+  'Japan':'JP','South Korea':'KR','China':'CN','Indonesia':'ID','Philippines':'PH',
+  'Thailand':'TH','Brazil':'BR','Argentina':'AR','Chile':'CL','Mexico':'MX',
+  'South Africa':'ZA','Nigeria':'NG','Kenya':'KE','Egypt':'EG',
+  'Switzerland':'CH','Liechtenstein':'LI','Luxembourg':'LU','Monaco':'MC','Denmark':'DK',
+  'Sweden':'SE','Norway':'NO','Finland':'FI','Iceland':'IS','Poland':'PL','Czech Republic':'CZ',
+  'Slovakia':'SK','Hungary':'HU','Romania':'RO','Moldova':'MD','Bulgaria':'BG','Greece':'GR',
+  'Cyprus':'CY','Croatia':'HR','Serbia':'RS','Bosnia and Herzegovina':'BA','Slovenia':'SI',
+  'North Macedonia':'MK','Montenegro':'ME','Albania':'AL','Kosovo':'XK','Ukraine':'UA',
+  'Belarus':'BY','Russia':'RU','Estonia':'EE','Latvia':'LV','Lithuania':'LT','Malta':'MT',
+  'San Marino':'SM','Turkey':'TR','Azerbaijan':'AZ','Georgia':'GE','Armenia':'AM',
+  'Saudi Arabia':'SA','United Arab Emirates':'AE','Qatar':'QA','Kuwait':'KW','Bahrain':'BH',
+  'Oman':'OM','Yemen':'YE','Jordan':'JO','Lebanon':'LB','Syria':'SY','Iraq':'IQ','Palestine':'PS',
+  'Morocco':'MA','Algeria':'DZ','Tunisia':'TN','Libya':'LY','Sudan':'SD','Israel':'IL','Iran':'IR',
+  'Afghanistan':'AF','Tajikistan':'TJ','Pakistan':'PK','Maldives':'MV','Bangladesh':'BD',
+  'Sri Lanka':'LK','Nepal':'NP','Bhutan':'BT','Vietnam':'VN','Cambodia':'KH','Laos':'LA',
+  'Myanmar':'MM','Malaysia':'MY','Brunei':'BN','Taiwan':'TW','Hong Kong':'HK','Mongolia':'MN',
+  'Kazakhstan':'KZ','Uzbekistan':'UZ','Kyrgyzstan':'KG','Turkmenistan':'TM','Ghana':'GH',
+  'Ivory Coast':'CI','Senegal':'SN','Cameroon':'CM','DR Congo':'CD','Madagascar':'MG',
+  'Ethiopia':'ET','Tanzania':'TZ','Uganda':'UG','Rwanda':'RW','Angola':'AO','Mozambique':'MZ',
+  'Zambia':'ZM','Zimbabwe':'ZW','Botswana':'BW','Namibia':'NA','Jamaica':'JM',
+  'Trinidad and Tobago':'TT','Fiji':'FJ','Papua New Guinea':'PG','Haiti':'HT','Colombia':'CO',
+  'Peru':'PE','Venezuela':'VE','Ecuador':'EC','Bolivia':'BO','Paraguay':'PY','Uruguay':'UY',
+  'Cuba':'CU','Dominican Republic':'DO','Guatemala':'GT','Costa Rica':'CR','Panama':'PA',
+  'Honduras':'HN','El Salvador':'SV','Nicaragua':'NI',
 };
 
-function flagFor(country) { return COUNTRY_FLAGS[country] || '🏳️'; }
+function isoToFlag(cc) {
+  return cc.toUpperCase().replace(/./g, c => String.fromCodePoint(127397 + c.charCodeAt(0)));
+}
+
+function flagFor(country) {
+  const cc = COUNTRY_ISO[country];
+  return cc ? isoToFlag(cc) : '🏳️';
+}
 
 // All countries that actually have pets, sorted alphabetically.
 function getCountryList() {

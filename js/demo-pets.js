@@ -6,6 +6,52 @@
   function ri(lo, hi) { return Math.floor(rng() * (hi - lo + 1)) + lo; }
   function chance(p) { return rng() < p; }
 
+  // ── Shared language name banks (reused by every country that speaks them) ──
+  const _EN = { f:['Emma','Liam','Olivia','Noah','Ava','James','Sophia','Oliver','Mia','Lucas','Charlotte','Henry','Amelia','Jack','Grace','Leo','Ella','Mason','Lily','Ethan'], l:['Smith','Johnson','Williams','Brown','Jones','Miller','Davis','Wilson','Moore','Taylor','Anderson','Thomas','Jackson','White','Harris','Martin','Thompson','Walker','Clark','Lewis'] };
+  const _ES = { f:['Sofía','Mateo','Valentina','Santiago','Isabella','Sebastián','Camila','Nicolás','Valeria','Diego','Mariana','Daniel','Gabriela','Alejandro','Lucía','Andrés','Daniela','Carlos','Antonella','Javier'], l:['García','Martínez','Rodríguez','López','González','Pérez','Sánchez','Ramírez','Torres','Flores','Rivera','Gómez','Díaz','Cruz','Morales','Reyes','Gutiérrez','Ortiz','Castro','Vargas'] };
+  const _PT = { f:['João','Maria','Pedro','Ana','Tiago','Beatriz','Miguel','Sofia','Rafael','Carolina','Bruno','Mariana','André','Inês','Diogo','Catarina','Gonçalo','Leonor','Rui','Matilde'], l:['Silva','Santos','Ferreira','Pereira','Oliveira','Costa','Rodrigues','Martins','Sousa','Fernandes','Gomes','Lopes','Marques','Almeida','Ribeiro','Carvalho','Teixeira','Moreira','Correia','Mendes'] };
+  const _FR = { f:['Lucas','Emma','Hugo','Léa','Louis','Chloé','Nathan','Manon','Théo','Camille','Antoine','Sarah','Maxime','Inès','Romain','Julie','Alexandre','Laura','Adrien','Pauline'], l:['Martin','Bernard','Dubois','Thomas','Robert','Richard','Petit','Durand','Leroy','Moreau','Simon','Laurent','Lefebvre','Michel','David','Bertrand','Roux','Vincent','Fournier','Girard'] };
+  const _DE = { f:['Lukas','Lena','Leon','Anna','Felix','Emma','Paul','Mia','Jonas','Hannah','Ben','Lea','Elias','Laura','Tim','Sophie','Finn','Marie','Noah','Julia'], l:['Müller','Schmidt','Schneider','Fischer','Weber','Meyer','Wagner','Becker','Schulz','Hoffmann','Schäfer','Koch','Bauer','Richter','Klein','Wolf','Schröder','Neumann','Schwarz','Zimmermann'] };
+  const _IT = { f:['Francesco','Sofia','Leonardo','Giulia','Alessandro','Aurora','Lorenzo','Alice','Mattia','Emma','Andrea','Giorgia','Gabriele','Martina','Riccardo','Chiara','Tommaso','Sara','Marco','Beatrice'], l:['Rossi','Russo','Ferrari','Esposito','Bianchi','Romano','Colombo','Ricci','Marino','Greco','Bruno','Gallo','Conti','De Luca','Costa','Giordano','Rizzo','Lombardi','Moretti','Barbieri'] };
+  const _AR = { f:['Mohammed','Fatima','Ahmed','Aisha','Ali','Mariam','Omar','Layla','Youssef','Nour','Khalid','Sara','Ibrahim','Huda','Hassan','Zainab','Tariq','Amira','Yusuf','Salma'], l:['Al-Sayed','Hassan','Ahmed','Ali','Ibrahim','Mahmoud','Khalil','Saleh','Abdullah','Al-Farsi','Haddad','Nasser','Karim','Rashid','Aziz','Mansour','Najjar','Salah','Younis','Hamdan'] };
+  const _FA = { f:['Ali','Fatemeh','Mohammad','Zahra','Hossein','Maryam','Reza','Sara','Amir','Narges','Hamid','Leila','Mehdi','Fariba','Saeed','Shirin','Navid','Mahsa','Arash','Yasmin'], l:['Hosseini','Mohammadi','Ahmadi','Rezaei','Karimi','Moradi','Jafari','Bagheri','Sadeghi','Rahimi','Akbari','Hashemi','Ebrahimi','Nazari','Kazemi','Rostami','Mousavi','Salehi','Yousefi','Ghasemi'] };
+  const _TR = { f:['Yusuf','Elif','Mustafa','Zeynep','Mehmet','Eda','Emir','Ayşe','Aylin','Ahmet','Merve','Burak','Selin','Ali','Büşra','Can','Defne','Murat','Fatma','Deniz'], l:['Yılmaz','Kaya','Demir','Şahin','Çelik','Yıldız','Yıldırım','Öztürk','Aydın','Özdemir','Arslan','Doğan','Kılıç','Aslan','Çetin','Korkmaz','Koç','Kurt','Şimşek','Polat'] };
+  const _RU = { f:['Alexander','Anastasia','Dmitri','Maria','Ivan','Ekaterina','Sergei','Olga','Andrei','Natalia','Mikhail','Anna','Nikolai','Tatiana','Vladimir','Elena','Pavel','Svetlana','Alexei','Irina'], l:['Ivanov','Smirnov','Kuznetsov','Popov','Vasiliev','Petrov','Sokolov','Mikhailov','Novikov','Fedorov','Morozov','Volkov','Alekseev','Lebedev','Semenov','Egorov','Pavlov','Kozlov','Stepanov','Nikolaev'] };
+  const _UA = { f:['Andriy','Sofia','Dmytro','Anastasia','Oleksandr','Mariya','Ivan','Kateryna','Volodymyr','Olha','Serhiy','Tetiana','Mykola','Yuliya','Vasyl','Iryna','Petro','Nataliya','Taras','Oksana'], l:['Melnyk','Shevchenko','Boyko','Kovalenko','Bondarenko','Tkachenko','Kovalchuk','Kravchenko','Oliynyk','Shevchuk','Polishchuk','Bondar','Tkachuk','Marchenko','Lysenko','Rudenko','Moroz','Savchenko','Kravets','Pavlenko'] };
+  const _PL = { f:['Jakub','Zuzanna','Jan','Julia','Szymon','Maja','Filip','Zofia','Kacper','Lena','Antoni','Hanna','Michał','Aleksandra','Wojciech','Natalia','Mateusz','Wiktoria','Piotr','Oliwia'], l:['Nowak','Kowalski','Wiśniewski','Wójcik','Kowalczyk','Kamiński','Lewandowski','Zieliński','Szymański','Woźniak','Dąbrowski','Kozłowski','Jankowski','Mazur','Wojciechowski','Kwiatkowski','Krawczyk','Kaczmarek','Piotrowski','Grabowski'] };
+  const _CZ = { f:['Jakub','Eliška','Jan','Tereza','Tomáš','Anna','Adam','Natálie','Matěj','Karolína','Vojtěch','Kristýna','Filip','Barbora','Ondřej','Adéla','David','Veronika','Lukáš','Klára'], l:['Novák','Svoboda','Novotný','Dvořák','Černý','Procházka','Kučera','Veselý','Horák','Němec','Pokorný','Marek','Pospíšil','Hájek','Jelínek','Král','Růžička','Beneš','Fiala','Sedláček'] };
+  const _HU = { f:['Bence','Hanna','Máté','Anna','Levente','Jázmin','Dávid','Zsófia','Ádám','Lili','Dominik','Réka','Gergő','Boglárka','Marcell','Eszter','Balázs','Petra','Dániel','Luca'], l:['Nagy','Kovács','Tóth','Szabó','Horváth','Varga','Kiss','Molnár','Németh','Farkas','Balogh','Papp','Takács','Juhász','Lakatos','Mészáros','Oláh','Simon','Rácz','Fekete'] };
+  const _RO = { f:['Andrei','Maria','Alexandru','Elena','Mihai','Ioana','Gabriel','Ana','Ștefan','Andreea','Cristian','Gabriela','Florin','Cristina','Ionuț','Daniela','Vlad','Alexandra','George','Bianca'], l:['Popescu','Ionescu','Popa','Pop','Radu','Dumitru','Stan','Stoica','Gheorghe','Matei','Constantin','Marin','Tudor','Barbu','Nistor','Florea','Munteanu','Diaconu','Lungu','Moldovan'] };
+  const _BG = { f:['Georgi','Maria','Ivan','Elena','Dimitar','Viktoria','Aleksandar','Gabriela','Nikolay','Ivana','Stefan','Petya','Martin','Desislava','Hristo','Yana','Todor','Tsvetelina','Kaloyan','Radost'], l:['Ivanov','Georgiev','Dimitrov','Petrov','Nikolov','Todorov','Hristov','Stoyanov','Marinov','Angelov','Kolev','Vasilev','Iliev','Yordanov','Petkov','Atanasov','Stefanov','Kostov','Pavlov','Borisov'] };
+  const _SS = { f:['Luka','Marija','Marko','Ana','Nikola','Ivana','Stefan','Milica','Petar','Jelena','Nemanja','Sara','Aleksandar','Katarina','Filip','Tijana','Miloš','Jovana','Vuk','Teodora'], l:['Jovanović','Petrović','Nikolić','Marković','Đorđević','Stojanović','Ilić','Stanković','Pavlović','Milošević','Popović','Kovačević','Babić','Knežević','Horvat','Kovač','Marić','Tomić','Lukić','Radić'] };
+  const _GR = { f:['Georgios','Maria','Ioannis','Eleni','Dimitrios','Katerina','Konstantinos','Sofia','Nikolaos','Vasiliki','Panagiotis','Despina','Christos','Anna','Athanasios','Dimitra','Andreas','Georgia','Spyros','Ioanna'], l:['Papadopoulos','Vlachos','Angelopoulos','Nikolaidis','Georgiou','Dimitriou','Pappas','Karagiannis','Makris','Oikonomou','Papandreou','Vasilakis','Konstantinidis','Antoniou','Christodoulou','Stavrou','Petrou','Theodorou','Samaras','Florakis'] };
+  const _SC = { f:['William','Emma','Oscar','Alice','Lucas','Maja','Liam','Ella','Oliver','Olivia','Hugo','Astrid','Noah','Wilma','Elias','Ebba','Filip','Saga','Axel','Freja'], l:['Andersson','Johansson','Karlsson','Nilsson','Eriksson','Larsson','Olsson','Hansen','Jensen','Nielsen','Pedersen','Larsen','Olsen','Berg','Hagen','Johansen','Lindgren','Bergström','Lindqvist','Dahl'] };
+  const _FI = { f:['Eino','Aino','Väinö','Emma','Onni','Sofia','Leo','Aada','Elias','Helmi','Niilo','Ella','Eeli','Venla','Oliver','Iida','Aapo','Lilja','Joel','Sara'], l:['Korhonen','Virtanen','Mäkinen','Nieminen','Mäkelä','Hämäläinen','Laine','Heikkinen','Koskinen','Järvinen','Lehtonen','Lehtinen','Saarinen','Salminen','Heinonen','Niemi','Heikkilä','Kinnunen','Salonen','Turunen'] };
+  const _IS = { f:['Jón','Guðrún','Sigurður','Anna','Gunnar','Kristín','Einar','Margrét','Ólafur','Sigríður','Magnús','Helga','Kristján','Katrín','Stefán','Elín','Árni','Ásta','Bjarni','Hanna'], l:['Jónsson','Sigurðsson','Guðmundsson','Einarsson','Gunnarsson','Ólafsson','Magnússon','Jónsdóttir','Sigurðardóttir','Guðmundsdóttir','Stefánsdóttir','Kristjánsdóttir','Helgason','Pálsson','Björnsson','Halldórsson','Árnason','Jóhannsson','Karlsson','Þórsdóttir'] };
+  const _EE = { f:['Rasmus','Sofia','Robin','Mia','Markus','Maria','Martin','Lisandra','Sander','Eliise','Oliver','Laura','Henri','Emma','Karl','Anna','Romet','Nora','Joosep','Iti'], l:['Tamm','Saar','Sepp','Mägi','Kask','Kukk','Rebane','Ilves','Pärn','Koppel','Lepik','Kallas','Raudsepp','Õun','Kuusk','Laur','Aru','Vaher','Mets','Saare'] };
+  const _LV = { f:['Roberts','Sofija','Markuss','Marta','Daniels','Anna','Gustavs','Emīlija','Artūrs','Alise','Rihards','Estere','Toms','Beāte','Kārlis','Luīze','Niks','Elīza','Ralfs','Paula'], l:['Bērziņš','Kalniņš','Ozoliņš','Jansons','Ozols','Liepa','Krūmiņš','Balodis','Vītols','Eglītis','Zariņš','Pētersons','Kļaviņš','Vanags','Skujiņš','Lācis','Auziņš','Briedis','Riekstiņš','Sproģis'] };
+  const _LT = { f:['Matas','Emilija','Nojus','Sofija','Kajus','Liepa','Dovydas','Urtė','Jokūbas','Gabija','Lukas','Austėja','Dominykas','Kamilė','Aronas','Saulė','Nedas','Goda','Tomas','Viltė'], l:['Kazlauskas','Jankauskas','Petrauskas','Stankevičius','Vasiliauskas','Žukauskas','Butkus','Paulauskas','Urbonas','Kavaliauskas','Pocius','Navickas','Rimkus','Kairys','Stonkus','Mickevičius','Balčiūnas','Adomaitis','Sakalauskas','Bagdonas'] };
+  const _AL = { f:['Endrit','Sara','Klaudio','Erisa','Arber','Megi','Dorian','Klea','Geri','Ana','Klevis','Jona','Aldo','Fatjona','Erion','Xhesika','Florian','Greta','Besnik','Elona'], l:['Hoxha','Shehu','Krasniqi','Berisha','Gjoni','Dervishi','Hasani','Kelmendi','Prifti','Bregu','Cela','Doci','Frasheri','Gashi','Kola','Leka','Marku','Nika','Rama','Zeneli'] };
+  const _HE = { f:['Noam','Maya','Itai','Tamar','Yosef','Noa','David','Shira','Eitan','Yael','Ariel','Adele','Daniel','Talia','Lior','Avigail','Omer','Hila','Yonatan','Roni'], l:['Cohen','Levi','Mizrahi','Peretz','Biton','Dahan','Avraham','Friedman','Katz','Azoulay','Malka','Gabay','Shapira','Ben-David','Barak','Segal','Adler','Klein','Golan','Aviv'] };
+  const _UR = { f:['Muhammad','Ayesha','Ali','Fatima','Hassan','Zainab','Bilal','Maryam','Usman','Hina','Ahmed','Sana','Hamza','Aliya','Faisal','Mehwish','Imran','Sadia','Asad','Rabia'], l:['Khan','Ahmed','Ali','Hussain','Malik','Sheikh','Butt','Chaudhry','Qureshi','Raza','Iqbal','Javed','Aslam','Farooq','Nawaz','Rashid','Saeed','Bhatti','Mahmood','Siddiqui'] };
+  const _BN = { f:['Rahim','Ayesha','Karim','Fatima','Hasan','Nusrat','Rakib','Sumaiya','Tanvir','Mim','Sakib','Jannat','Imran','Tania','Shovon','Sadia','Arif','Mitu','Fahim','Rumana'], l:['Islam','Rahman','Ahmed','Hossain','Akter','Khan','Begum','Chowdhury','Sarkar','Das','Sheikh','Mia','Uddin','Khatun','Ali','Haque','Miah','Bhuiyan','Roy','Saha'] };
+  const _LK = { f:['Nimal','Kumari','Sunil','Dilani','Ruwan','Sandya','Chaminda','Nilani','Kasun','Ishara','Lasith','Dinusha','Tharindu','Sachini','Pradeep','Madhavi','Nuwan','Hasini','Roshan','Amaya'], l:['Perera','Fernando','Silva','Bandara','Jayawardena','Wickramasinghe','Rajapaksa','Gunawardena','Dissanayake','Ratnayake','Senanayake','Mendis','Wijesinghe','Herath','Kumara','Pathirana','Weerasinghe','Samaraweera','Ekanayake','Karunaratne'] };
+  const _NP = { f:['Aarav','Aasha','Bibek','Sita','Prakash','Anjali','Suman','Puja','Ramesh','Sunita','Bishal','Gita','Nabin','Manisha','Sandeep','Sarita','Dipesh','Rojina','Hari','Bina'], l:['Shrestha','Sharma','Adhikari','Thapa','Gurung','Magar','Tamang','Karki','Rai','Khadka','Bhattarai','Poudel','Koirala','Dahal','Acharya','Bhandari','Maharjan','Pandey','Subedi','Lama'] };
+  const _VN = { f:['Anh','Linh','Minh','Huong','Tuan','Lan','Hung','Mai','Nam','Thu','Quan','Trang','Long','Hoa','Phong','Ngoc','Duc','Hanh','Khoa','Yen'], l:['Nguyen','Tran','Le','Pham','Hoang','Phan','Vu','Dang','Bui','Do','Ho','Ngo','Duong','Ly','Vo','Dinh','Truong','Mai','Cao','Luong'] };
+  const _KH = { f:['Sokha','Srey','Dara','Bopha','Vibol','Channary','Rithy','Sophea','Pisey','Kosal','Chankrisna','Maly','Veasna','Theary','Samnang','Davy','Vichea','Sothea','Ratanak','Leakhena'], l:['Sok','Chan','Kim','Lim','Heng','Ouch','Pich','Chea','Sam','Meas','Hor','Ly','Ros','Khiev','Touch','Nuon','Em','Yim','Seng','Mao'] };
+  const _LA = { f:['Somsak','Bounmy','Khamla','Vandara','Phout','Noy','Kham','Souk','Vilay','Mali','Thong','Daeng','Sengdao','Boua','Khamphone','Lamai','Aloun','Keo','Sai','Phila'], l:['Sisavath','Vongsa','Phommavong','Inthavong','Sayavong','Keomany','Chanthavong','Phimmasone','Rattanavong','Soulivong','Vilayvanh','Bounmany','Khamvongsa','Thammavong','Sengdara','Manivong','Khamphan','Oudomsouk','Saysana','Vongphachanh'] };
+  const _MM = { f:['Aung','Su','Kyaw','Hla','Min','Thida','Zaw','Nwe','Htin','Khin','Soe','Mya','Naing','Aye','Win','Ei','Tun','Sandar','Myo','Yamin'], l:['Aung','Kyaw','Win','Htun','Oo','Hlaing','Soe','Maung','Myint','Zaw','Naing','Tun','Moe','Lwin','Thant','Kyi','Phyo','Nyein','Han','Wai'] };
+  const _MS = { f:['Ahmad','Nur','Muhammad','Siti','Mohd','Aisyah','Faiz','Farah','Hafiz','Aina','Amir','Liyana','Iskandar','Sofia','Zul','Nadia','Haziq','Alya','Danish','Iman'], l:['bin Abdullah','binti Ahmad','Ismail','Hassan','Rahman','Yusof','Ibrahim','Othman','Bakar','Hamid','Razak','Salleh','Aziz','Omar','Karim','Mansor','Zainal','Daud','Rashid','Saad'] };
+  const _ZH = { f:['Wei','Fang','Yang','Jing','Li','Xiao','Hua','Lei','Mei','Hong','Xin','Ping','Jun','Feng','Hui','Tao','Yan','Zhen','Hao','Ling'], l:['Wang','Li','Zhang','Liu','Chen','Yang','Huang','Zhao','Wu','Zhou','Xu','Sun','Ma','Zhu','Hu','Lin','Guo','He','Gao','Luo'] };
+  const _MN = { f:['Bat','Sara','Temujin','Bolormaa','Ganbold','Oyun','Chuluun','Narantsetseg','Erdene','Tuya','Bayar','Saruul','Munkh','Enkhtuya','Otgon','Bolor','Ganzorig','Khulan','Tseren','Nomin'], l:['Batbayar','Ganbaatar','Dorj','Tsogt','Baatar','Enkhbat','Erdene','Chuluun','Munkh','Otgonbayar','Gantulga','Sukhbaatar','Battulga','Nergui','Tserendorj','Davaa','Lhagva','Bold','Jargal','Tumen'] };
+  const _CA = { f:['Aibek','Aigerim','Nurlan','Dilnoza','Timur','Zarina','Ruslan','Madina','Bek','Gulnara','Azamat','Aliya','Daniyar','Kamila','Erlan','Nazgul','Bauyrzhan','Saule','Arman','Dinara'], l:['Nazarbayev','Aliyev','Karimov','Usmanov','Ibragimov','Yusupov','Akhmedov','Rashidov','Bekov','Sultanov','Mirzaev','Saidov','Toktosunov','Abdullaev','Ismailov','Kadyrov','Sharipov','Nazarov','Tashkenov','Yermekov'] };
+  const _GE = { f:['Giorgi','Mariam','Davit','Tamar','Nika','Ana','Luka','Nino','Saba','Salome','Sandro','Elene','Irakli','Natia','Levan','Khatia','Zurab','Eka','Vakhtang','Lika'], l:['Beridze','Kapanadze','Gelashvili','Maisuradze','Giorgadze','Lomidze','Tsiklauri','Bregadze','Tabidze','Khurtsilava','Janashia','Kvaratskhelia','Gogoladze','Chkheidze','Dvali','Nadiradze','Tsereteli','Abramishvili','Tatishvili','Kobakhidze'] };
+  const _AM = { f:['Aram','Ani','Davit','Mariam','Narek','Lilit','Tigran','Anahit','Hayk','Nare','Gor','Mané','Levon','Sona','Vahe','Gayane','Armen','Lusine','Ashot','Syuzanna'], l:['Hovhannisyan','Sargsyan','Harutyunyan','Grigoryan','Petrosyan','Khachatryan','Hakobyan','Vardanyan','Stepanyan','Karapetyan','Gevorgyan','Avetisyan','Manukyan','Davtyan','Mkrtchyan','Galstyan','Ghazaryan','Minasyan','Simonyan','Aslanyan'] };
+  const _AZ = { f:['Ali','Fatima','Murad','Aysel','Tural','Nigar','Elvin','Leyla','Orkhan','Gunel','Rashad','Sevinj','Kamran','Aytaj','Nijat','Khayal','Farid','Lala','Ramin','Ulviyya'], l:['Aliyev','Mammadov','Hasanov','Huseynov','Guliyev','Ahmadov','Ismayilov','Rzayev','Abbasov','Jafarov','Karimov','Babayev','Quliyev','Suleymanov','Veliyev','Najafov','Tagiyev','Orujov','Aliyeva','Mammadova'] };
+  const _SW = { f:['Juma','Amani','Baraka','Zuri','Jabari','Nia','Hamisi','Asha','Rashidi','Imani','Salim','Neema','Bakari','Pendo','Tumaini','Subira','Fadhili','Rehema','Daudi','Halima'], l:['Mwangi','Juma','Hassan','Said','Abdallah','Mohamed','Ali','Omari','Hamisi','Bakari','Mwinyi','Athumani','Salim','Rashid','Khamis','Shabani','Mussa','Iddi','Suleiman','Ramadhani'] };
+  const _ET = { f:['Abebe','Tigist','Dawit','Hana','Yonas','Selam','Mulugeta','Bethlehem','Tesfaye','Meron','Getachew','Saba','Abel','Eden','Solomon','Helen','Bereket','Lily','Henok','Mahlet'], l:['Tadesse','Bekele','Girma','Haile','Mengistu','Abebe','Tesfaye','Assefa','Gebre','Wolde','Desta','Alemu','Kebede','Teshome','Mekonnen','Negussie','Hailu','Demeke','Fikru','Worku'] };
+  const _GH = { f:['Kwame','Ama','Kofi','Akosua','Yaw','Abena','Kojo','Esi','Kwabena','Afia','Kwaku','Adwoa','Fiifi','Akua','Ato','Efua','Nana','Maa','Kobby','Araba'], l:['Mensah','Owusu','Boateng','Asante','Osei','Agyeman','Appiah','Acheampong','Adjei','Ofori','Annan','Darko','Frimpong','Gyamfi','Quaye','Bonsu','Nkrumah','Amoah','Antwi','Danso'] };
+
   const NAMES = {
     'United States': {
       f:['Emma','Liam','Olivia','Noah','Ava','Sophia','James','Isabella','Oliver','Mia','Benjamin','Charlotte','Elijah','Amelia','Lucas','Harper','Mason','Evelyn','Logan','Aiden','Michael','Emily','Daniel','Madison','Matthew','Chloe','Ryan','Abigail','Tyler','Grace'],
@@ -127,6 +173,26 @@
       f:['Mohamed','Fatima','Ahmed','Nour','Mahmoud','Sara','Ali','Mariam','Omar','Yasmine','Ibrahim','Dina','Youssef','Rana','Hassan','Heba','Khaled','Mona','Amr','Eman','Mostafa','Reem','Tarek','Nadia','Karim','Layla','Sherif','Mai','Walid','Doha'],
       l:['Hassan','Ahmed','Mohamed','Ibrahim','Ali','Mahmoud','Sayed','Mostafa','Khalil','Mansour','Farouk','Nasser','Saleh','Taha','Youssef','Kamel','Zaki','Amin','Fathy','Ramadan','Abd El-Rahman','El-Sayed','El-Sharkawy','Abdallah','Gomaa','Soliman','Osman','Badr','Gaber','Hegazy']
     },
+    // ── Every other country, mapped to the language(s) it speaks ──
+    'Switzerland':_DE,'Liechtenstein':_DE,
+    'Luxembourg':_FR,'Monaco':_FR,'Haiti':_FR,"Ivory Coast":_FR,'Senegal':_FR,'Cameroon':_FR,'DR Congo':_FR,'Madagascar':_FR,
+    'Denmark':_SC,'Sweden':_SC,'Norway':_SC,'Finland':_FI,'Iceland':_IS,
+    'Poland':_PL,'Czech Republic':_CZ,'Slovakia':_CZ,'Hungary':_HU,'Romania':_RO,'Moldova':_RO,'Bulgaria':_BG,'Greece':_GR,'Cyprus':_GR,
+    'Croatia':_SS,'Serbia':_SS,'Bosnia and Herzegovina':_SS,'Slovenia':_SS,'North Macedonia':_SS,'Montenegro':_SS,'Albania':_AL,'Kosovo':_AL,
+    'Ukraine':_UA,'Belarus':_RU,'Russia':_RU,'Estonia':_EE,'Latvia':_LV,'Lithuania':_LT,
+    'Malta':_IT,'San Marino':_IT,
+    'Turkey':_TR,'Azerbaijan':_AZ,'Georgia':_GE,'Armenia':_AM,
+    'Saudi Arabia':_AR,'United Arab Emirates':_AR,'Qatar':_AR,'Kuwait':_AR,'Bahrain':_AR,'Oman':_AR,'Yemen':_AR,'Jordan':_AR,'Lebanon':_AR,'Syria':_AR,'Iraq':_AR,'Palestine':_AR,
+    'Morocco':_AR,'Algeria':_AR,'Tunisia':_AR,'Libya':_AR,'Sudan':_AR,
+    'Israel':_HE,'Iran':_FA,'Afghanistan':_FA,'Tajikistan':_FA,
+    'Pakistan':_UR,'Maldives':_UR,'Bangladesh':_BN,'Sri Lanka':_LK,'Nepal':_NP,'Bhutan':_NP,
+    'Vietnam':_VN,'Cambodia':_KH,'Laos':_LA,'Myanmar':_MM,'Malaysia':_MS,'Brunei':_MS,
+    'Taiwan':_ZH,'Hong Kong':_ZH,'Mongolia':_MN,
+    'Kazakhstan':_CA,'Uzbekistan':_CA,'Kyrgyzstan':_CA,'Turkmenistan':_CA,
+    'Ghana':_GH,'Ethiopia':_ET,'Tanzania':_SW,'Uganda':_SW,'Rwanda':_SW,
+    'Angola':_PT,'Mozambique':_PT,
+    'Zambia':_EN,'Zimbabwe':_EN,'Botswana':_EN,'Namibia':_EN,'Jamaica':_EN,'Trinidad and Tobago':_EN,'Fiji':_EN,'Papua New Guinea':_EN,
+    'Colombia':_ES,'Peru':_ES,'Venezuela':_ES,'Ecuador':_ES,'Bolivia':_ES,'Paraguay':_ES,'Uruguay':_ES,'Cuba':_ES,'Dominican Republic':_ES,'Guatemala':_ES,'Costa Rica':_ES,'Panama':_ES,'Honduras':_ES,'El Salvador':_ES,'Nicaragua':_ES,
   };
 
   // Fallback for any country not listed above
@@ -230,6 +296,121 @@
     {city:'Edinburgh', country:'United Kingdom', lat:[55.9,56.0], lng:[-3.3,-3.15]},
     {city:'Auckland', country:'New Zealand', lat:[-37.05,-36.75], lng:[174.6,174.9]},
     {city:'Perth, WA', country:'Australia', lat:[-32.05,-31.8], lng:[115.75,116.0]},
+    // ── Every other country in the world ──
+    {city:'Zürich', country:'Switzerland', lat:[47.31,47.43], lng:[8.45,8.61]},
+    {city:'Vaduz', country:'Liechtenstein', lat:[47.08,47.20], lng:[9.46,9.58]},
+    {city:'Luxembourg City', country:'Luxembourg', lat:[49.55,49.67], lng:[6.07,6.19]},
+    {city:'Monte Carlo', country:'Monaco', lat:[43.69,43.76], lng:[7.39,7.45]},
+    {city:'Copenhagen', country:'Denmark', lat:[55.62,55.74], lng:[12.51,12.63]},
+    {city:'Stockholm', country:'Sweden', lat:[59.27,59.39], lng:[18.00,18.13]},
+    {city:'Oslo', country:'Norway', lat:[59.85,59.97], lng:[10.69,10.81]},
+    {city:'Helsinki', country:'Finland', lat:[60.11,60.23], lng:[24.88,25.00]},
+    {city:'Reykjavík', country:'Iceland', lat:[64.09,64.21], lng:[-22.00,-21.82]},
+    {city:'Warsaw', country:'Poland', lat:[52.17,52.29], lng:[20.95,21.07]},
+    {city:'Prague', country:'Czech Republic', lat:[50.02,50.14], lng:[14.38,14.50]},
+    {city:'Bratislava', country:'Slovakia', lat:[48.09,48.21], lng:[17.05,17.17]},
+    {city:'Budapest', country:'Hungary', lat:[47.44,47.56], lng:[18.98,19.10]},
+    {city:'Bucharest', country:'Romania', lat:[44.37,44.49], lng:[26.04,26.16]},
+    {city:'Chișinău', country:'Moldova', lat:[46.95,47.07], lng:[28.80,28.92]},
+    {city:'Sofia', country:'Bulgaria', lat:[42.64,42.76], lng:[23.26,23.38]},
+    {city:'Athens', country:'Greece', lat:[37.92,38.04], lng:[23.67,23.79]},
+    {city:'Nicosia', country:'Cyprus', lat:[35.11,35.23], lng:[33.30,33.42]},
+    {city:'Zagreb', country:'Croatia', lat:[45.75,45.87], lng:[15.92,16.04]},
+    {city:'Belgrade', country:'Serbia', lat:[44.73,44.85], lng:[20.39,20.51]},
+    {city:'Sarajevo', country:'Bosnia and Herzegovina', lat:[43.80,43.92], lng:[18.35,18.47]},
+    {city:'Ljubljana', country:'Slovenia', lat:[46.00,46.12], lng:[14.45,14.57]},
+    {city:'Skopje', country:'North Macedonia', lat:[41.93,42.05], lng:[21.37,21.49]},
+    {city:'Podgorica', country:'Montenegro', lat:[42.38,42.50], lng:[19.20,19.32]},
+    {city:'Tirana', country:'Albania', lat:[41.27,41.39], lng:[19.76,19.88]},
+    {city:'Pristina', country:'Kosovo', lat:[42.60,42.72], lng:[21.11,21.23]},
+    {city:'Kyiv', country:'Ukraine', lat:[50.39,50.51], lng:[30.46,30.58]},
+    {city:'Minsk', country:'Belarus', lat:[53.84,53.96], lng:[27.51,27.63]},
+    {city:'Moscow', country:'Russia', lat:[55.69,55.81], lng:[37.56,37.68]},
+    {city:'Tallinn', country:'Estonia', lat:[59.38,59.50], lng:[24.69,24.81]},
+    {city:'Riga', country:'Latvia', lat:[56.89,57.01], lng:[24.05,24.17]},
+    {city:'Vilnius', country:'Lithuania', lat:[54.63,54.75], lng:[25.22,25.34]},
+    {city:'Valletta', country:'Malta', lat:[35.84,35.96], lng:[14.45,14.57]},
+    {city:'San Marino', country:'San Marino', lat:[43.88,44.00], lng:[12.40,12.52]},
+    {city:'Istanbul', country:'Turkey', lat:[40.95,41.07], lng:[28.92,29.04]},
+    {city:'Baku', country:'Azerbaijan', lat:[40.35,40.47], lng:[49.81,49.93]},
+    {city:'Tbilisi', country:'Georgia', lat:[41.66,41.78], lng:[44.73,44.85]},
+    {city:'Yerevan', country:'Armenia', lat:[40.12,40.24], lng:[44.45,44.57]},
+    {city:'Riyadh', country:'Saudi Arabia', lat:[24.65,24.77], lng:[46.62,46.74]},
+    {city:'Dubai', country:'United Arab Emirates', lat:[25.14,25.26], lng:[55.21,55.33]},
+    {city:'Doha', country:'Qatar', lat:[25.23,25.35], lng:[51.47,51.59]},
+    {city:'Kuwait City', country:'Kuwait', lat:[29.32,29.44], lng:[47.93,48.05]},
+    {city:'Manama', country:'Bahrain', lat:[26.17,26.29], lng:[50.53,50.65]},
+    {city:'Muscat', country:'Oman', lat:[23.53,23.65], lng:[58.35,58.47]},
+    {city:"Sana'a", country:'Yemen', lat:[15.31,15.43], lng:[44.13,44.25]},
+    {city:'Amman', country:'Jordan', lat:[31.89,32.01], lng:[35.87,35.99]},
+    {city:'Beirut', country:'Lebanon', lat:[33.83,33.95], lng:[35.44,35.56]},
+    {city:'Damascus', country:'Syria', lat:[33.45,33.57], lng:[36.23,36.35]},
+    {city:'Baghdad', country:'Iraq', lat:[33.25,33.37], lng:[44.30,44.42]},
+    {city:'Ramallah', country:'Palestine', lat:[31.84,31.96], lng:[35.14,35.26]},
+    {city:'Casablanca', country:'Morocco', lat:[33.51,33.63], lng:[-7.65,-7.53]},
+    {city:'Algiers', country:'Algeria', lat:[36.69,36.81], lng:[3.00,3.12]},
+    {city:'Tunis', country:'Tunisia', lat:[36.75,36.87], lng:[10.12,10.24]},
+    {city:'Tripoli', country:'Libya', lat:[32.83,32.95], lng:[13.13,13.25]},
+    {city:'Khartoum', country:'Sudan', lat:[15.44,15.56], lng:[32.50,32.62]},
+    {city:'Tel Aviv', country:'Israel', lat:[32.02,32.14], lng:[34.72,34.84]},
+    {city:'Tehran', country:'Iran', lat:[35.63,35.75], lng:[51.33,51.45]},
+    {city:'Kabul', country:'Afghanistan', lat:[34.50,34.62], lng:[69.15,69.27]},
+    {city:'Dushanbe', country:'Tajikistan', lat:[38.50,38.62], lng:[68.73,68.85]},
+    {city:'Karachi', country:'Pakistan', lat:[24.80,24.92], lng:[66.95,67.07]},
+    {city:'Malé', country:'Maldives', lat:[4.12,4.24], lng:[73.45,73.57]},
+    {city:'Dhaka', country:'Bangladesh', lat:[23.75,23.87], lng:[90.35,90.47]},
+    {city:'Colombo', country:'Sri Lanka', lat:[6.87,6.99], lng:[79.80,79.92]},
+    {city:'Kathmandu', country:'Nepal', lat:[27.66,27.78], lng:[85.26,85.38]},
+    {city:'Thimphu', country:'Bhutan', lat:[27.41,27.53], lng:[89.58,89.70]},
+    {city:'Hanoi', country:'Vietnam', lat:[20.97,21.09], lng:[105.79,105.91]},
+    {city:'Phnom Penh', country:'Cambodia', lat:[11.50,11.62], lng:[104.86,104.98]},
+    {city:'Vientiane', country:'Laos', lat:[17.91,18.03], lng:[102.57,102.69]},
+    {city:'Yangon', country:'Myanmar', lat:[16.81,16.93], lng:[96.14,96.26]},
+    {city:'Kuala Lumpur', country:'Malaysia', lat:[3.08,3.20], lng:[101.63,101.75]},
+    {city:'Bandar Seri Begawan', country:'Brunei', lat:[4.84,4.96], lng:[114.88,115.00]},
+    {city:'Taipei', country:'Taiwan', lat:[24.97,25.09], lng:[121.51,121.63]},
+    {city:'Hong Kong', country:'Hong Kong', lat:[22.26,22.38], lng:[114.11,114.23]},
+    {city:'Ulaanbaatar', country:'Mongolia', lat:[47.83,47.95], lng:[106.85,106.97]},
+    {city:'Almaty', country:'Kazakhstan', lat:[43.18,43.30], lng:[76.83,76.95]},
+    {city:'Tashkent', country:'Uzbekistan', lat:[41.25,41.37], lng:[69.18,69.30]},
+    {city:'Bishkek', country:'Kyrgyzstan', lat:[42.81,42.93], lng:[74.53,74.65]},
+    {city:'Ashgabat', country:'Turkmenistan', lat:[37.90,38.02], lng:[58.27,58.39]},
+    {city:'Accra', country:'Ghana', lat:[5.54,5.66], lng:[-0.25,-0.13]},
+    {city:'Abidjan', country:'Ivory Coast', lat:[5.30,5.42], lng:[-4.07,-3.95]},
+    {city:'Dakar', country:'Senegal', lat:[14.66,14.78], lng:[-17.53,-17.41]},
+    {city:'Douala', country:'Cameroon', lat:[3.99,4.11], lng:[9.71,9.83]},
+    {city:'Kinshasa', country:'DR Congo', lat:[-4.38,-4.26], lng:[15.25,15.37]},
+    {city:'Antananarivo', country:'Madagascar', lat:[-18.94,-18.82], lng:[47.45,47.57]},
+    {city:'Addis Ababa', country:'Ethiopia', lat:[8.97,9.09], lng:[38.68,38.80]},
+    {city:'Dar es Salaam', country:'Tanzania', lat:[-6.85,-6.73], lng:[39.15,39.27]},
+    {city:'Kampala', country:'Uganda', lat:[0.29,0.41], lng:[32.52,32.64]},
+    {city:'Kigali', country:'Rwanda', lat:[-2.00,-1.88], lng:[30.00,30.12]},
+    {city:'Luanda', country:'Angola', lat:[-8.90,-8.78], lng:[13.17,13.29]},
+    {city:'Maputo', country:'Mozambique', lat:[-26.03,-25.91], lng:[32.51,32.63]},
+    {city:'Lusaka', country:'Zambia', lat:[-15.48,-15.36], lng:[28.22,28.34]},
+    {city:'Harare', country:'Zimbabwe', lat:[-17.89,-17.77], lng:[30.99,31.11]},
+    {city:'Gaborone', country:'Botswana', lat:[-24.71,-24.59], lng:[25.85,25.97]},
+    {city:'Windhoek', country:'Namibia', lat:[-22.62,-22.50], lng:[17.02,17.14]},
+    {city:'Kingston', country:'Jamaica', lat:[17.91,18.03], lng:[-76.85,-76.73]},
+    {city:'Port of Spain', country:'Trinidad and Tobago', lat:[10.60,10.72], lng:[-61.58,-61.46]},
+    {city:'Suva', country:'Fiji', lat:[-18.20,-18.08], lng:[178.38,178.50]},
+    {city:'Port Moresby', country:'Papua New Guinea', lat:[-9.50,-9.38], lng:[147.12,147.24]},
+    {city:'Port-au-Prince', country:'Haiti', lat:[18.53,18.65], lng:[-72.37,-72.25]},
+    {city:'Bogotá', country:'Colombia', lat:[4.65,4.77], lng:[-74.13,-74.01]},
+    {city:'Lima', country:'Peru', lat:[-12.11,-11.99], lng:[-77.10,-76.98]},
+    {city:'Caracas', country:'Venezuela', lat:[10.43,10.55], lng:[-66.94,-66.82]},
+    {city:'Quito', country:'Ecuador', lat:[-0.24,-0.12], lng:[-78.53,-78.41]},
+    {city:'La Paz', country:'Bolivia', lat:[-16.56,-16.44], lng:[-68.21,-68.09]},
+    {city:'Asunción', country:'Paraguay', lat:[-25.34,-25.22], lng:[-57.70,-57.58]},
+    {city:'Montevideo', country:'Uruguay', lat:[-34.96,-34.84], lng:[-56.22,-56.10]},
+    {city:'Havana', country:'Cuba', lat:[23.05,23.17], lng:[-82.43,-82.31]},
+    {city:'Santo Domingo', country:'Dominican Republic', lat:[18.43,18.55], lng:[-69.99,-69.87]},
+    {city:'Guatemala City', country:'Guatemala', lat:[14.57,14.69], lng:[-90.57,-90.45]},
+    {city:'San José', country:'Costa Rica', lat:[9.87,9.99], lng:[-84.14,-84.02]},
+    {city:'Panama City', country:'Panama', lat:[8.92,9.04], lng:[-79.58,-79.46]},
+    {city:'Tegucigalpa', country:'Honduras', lat:[14.01,14.13], lng:[-87.25,-87.13]},
+    {city:'San Salvador', country:'El Salvador', lat:[13.63,13.75], lng:[-89.28,-89.16]},
+    {city:'Managua', country:'Nicaragua', lat:[12.05,12.17], lng:[-86.30,-86.18]},
   ];
 
   const STREETS = ['Maple St','Oak Ave','Cedar Rd','Pine St','Elm St','River Rd','Park Ave',
