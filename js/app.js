@@ -47,14 +47,11 @@ async function uploadPhoto(file) {
 async function loadCounter() {
   const el = document.getElementById('reunited-count');
   if (!el) return;
-  let target;
-  if (DB_READY) {
-    const { count, error } = await supabaseClient
-      .from('pets').select('id', { count: 'exact', head: true }).eq('status', 'reunited');
-    target = error ? parseInt(localStorage.getItem('pawfinder_reunited') || '10') : (count ?? 0);
-  } else {
-    target = parseInt(localStorage.getItem('pawfinder_reunited') || '10');
-  }
+  // Count the real reunited pets (respects the chosen country) plus any the user marked.
+  const pets = await getPets();
+  const base = pets.filter(p => p.reunited || p.status === 'reunited').length;
+  const bonus = parseInt(localStorage.getItem('pawfinder_reunited_bonus') || '0');
+  const target = base + bonus;
   const duration = 1200;
   const startTime = performance.now();
   (function tick(now) {
@@ -480,10 +477,10 @@ async function markReunited(key, btn) {
     card.insertAdjacentHTML('afterbegin', '<div class="reunited-banner">🎉 REUNITED!</div>');
   }
   btn.remove();
-  const stored = parseInt(localStorage.getItem('pawfinder_reunited') || '10') + 1;
-  localStorage.setItem('pawfinder_reunited', stored);
+  const bonus = parseInt(localStorage.getItem('pawfinder_reunited_bonus') || '0') + 1;
+  localStorage.setItem('pawfinder_reunited_bonus', bonus);
   const el = document.getElementById('reunited-count');
-  if (el) el.textContent = stored;
+  if (el) el.textContent = (parseInt(el.textContent) || 0) + 1;
 }
 
 // ── TIPS ─────────────────────────────────────────────────────────────────────
