@@ -755,6 +755,7 @@ function setupPhotoInput(cameraBtnId, galleryId, previewId) {
 // ── FORMS ────────────────────────────────────────────────────────────────────
 
 const pickerMaps = {};
+const confirmBtns = { 'location-picker-lost': 'confirm-lost', 'location-picker-found': 'confirm-found' };
 
 function setPickerPin(mapDivId, lat, lng, statusId, latInputId, lngInputId, label) {
   const pm = pickerMaps[mapDivId];
@@ -766,6 +767,9 @@ function setPickerPin(mapDivId, lat, lng, statusId, latInputId, lngInputId, labe
   const status = document.getElementById(statusId);
   status.textContent = label || `📍 Pin dropped! (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
   status.style.color = '#f97316';
+  // The location changed, so allow confirming again.
+  const cb = document.getElementById(confirmBtns[mapDivId]);
+  if (cb) { cb.disabled = false; cb.textContent = '✅ Confirm Location'; }
 }
 
 function initLocationPicker(mapDivId, latInputId, lngInputId, statusId) {
@@ -840,7 +844,7 @@ async function searchIntersection(mapDivId, road1Id, road2Id, statusId) {
 }
 
 // Confirm the dropped pin is the right spot.
-function confirmLocation(statusId, latInputId, lngInputId) {
+function confirmLocation(statusId, latInputId, lngInputId, btnId) {
   const status = document.getElementById(statusId);
   const lat = document.getElementById(latInputId).value;
   const lng = document.getElementById(lngInputId).value;
@@ -851,6 +855,9 @@ function confirmLocation(statusId, latInputId, lngInputId) {
   }
   status.textContent = `✅ Location confirmed! (${(+lat).toFixed(4)}, ${(+lng).toFixed(4)})`;
   status.style.color = '#16a34a';
+  // Grey out the button until the location is moved again.
+  const btn = document.getElementById(btnId);
+  if (btn) { btn.disabled = true; btn.textContent = '✅ Confirmed'; }
 }
 
 async function submitLostForm(e) {

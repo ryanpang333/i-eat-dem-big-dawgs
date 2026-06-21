@@ -533,6 +533,11 @@ footer a {
   flex-wrap: wrap;
   margin-top: 10px;
 }
+.intersection-actions .submit-btn:disabled {
+  background: #bbb !important;
+  cursor: not-allowed;
+  opacity: 0.8;
+}
 [data-theme="dark"] .intersection-box { background: #2a2a3a; border-color: #44445a; }
 [data-theme="dark"] .intersection-row input { background: #1e1e2a; border-color: #44445a; color: #eee; }
 
