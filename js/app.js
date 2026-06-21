@@ -32,13 +32,47 @@ async function getPets() {
 
 async function savePet(pet) {
   if (DB_READY) {
-    const { error } = await supabaseClient.from('pets').insert([pet]);
+    const { data, error } = await supabaseClient.from('pets').insert([pet]).select().single();
     if (error) throw error;
+    return data ? data.id : null;
   } else {
     const pets = JSON.parse(localStorage.getItem('pawfinder_pets') || '[]');
+    pet.id = pet.id || ('local-' + Date.now());
     pets.push(pet);
     localStorage.setItem('pawfinder_pets', JSON.stringify(pets));
+    return pet.id;
   }
+}
+
+// Track which posts this browser created, so only those get a Delete button.
+function addMyPost(id) {
+  if (!id) return;
+  const a = JSON.parse(localStorage.getItem('pawfinder_my_posts') || '[]');
+  if (!a.includes(String(id))) { a.push(String(id)); localStorage.setItem('pawfinder_my_posts', JSON.stringify(a)); }
+}
+function isMyPost(id) {
+  return id && JSON.parse(localStorage.getItem('pawfinder_my_posts') || '[]').includes(String(id));
+}
+function removeMyPost(id) {
+  const a = JSON.parse(localStorage.getItem('pawfinder_my_posts') || '[]').filter(x => x !== String(id));
+  localStorage.setItem('pawfinder_my_posts', JSON.stringify(a));
+}
+
+async function deletePost(key, btn) {
+  const pet = petStore.get(key);
+  if (!pet || !pet.id) return;
+  if (!confirm('Delete this post? This cannot be undone.')) return;
+  const id = String(pet.id);
+  if (id.startsWith('local-')) {
+    const pets = JSON.parse(localStorage.getItem('pawfinder_pets') || '[]').filter(p => String(p.id) !== id);
+    localStorage.setItem('pawfinder_pets', JSON.stringify(pets));
+  } else if (DB_READY && !id.startsWith('demo-')) {
+    const { error } = await supabaseClient.from('pets').delete().eq('id', pet.id);
+    if (error) { alert('Could not delete: ' + error.message); return; }
+  }
+  removeMyPost(id);
+  const card = btn.closest('.card');
+  if (card) card.remove();
 }
 
 async function uploadPhoto(file) {
@@ -190,6 +224,7 @@ function renderCard(pet) {
         ${!isReunited ? `<button class="action-btn btn-spotted" onclick="openSpottingModal('${key}')">👁 Spotted${sightCount?` (${sightCount})`:''}</button>` : ''}
         <button class="action-btn" onclick="openDetailModal('${key}')">🔍 Details</button>
         ${!isReunited && pet.id ? `<button class="action-btn btn-reunited" onclick="markReunited('${key}',this)">🎉 Reunited!</button>` : ''}
+        ${isMyPost(pet.id) ? `<button class="action-btn btn-delete" onclick="deletePost('${key}',this)">🗑️ Delete</button>` : ''}
       </div>
       <div class="tips-section">
         <div class="tips-input-row">
@@ -922,7 +957,7 @@ async function submitLostForm(e) {
     ]);
     const locParts = [form.location?.value, form.state?.value, form.country?.value].filter(Boolean);
     const timeSeen = form.time_seen?.value;
-    await savePet({
+    const newId = await savePet({
       type: 'lost', owner_name: form.ownerName.value, phone: phone || '',
       email: email || '', phone_hidden: !!form.phone_hidden?.checked,
       pet_name: form.petName.value, animal: form.animal.value, breed: form.breed.value,
@@ -934,6 +969,7 @@ async function submitLostForm(e) {
       reward: form.reward.value === 'yes',
       lat: parseFloat(form.lat.value) || null, lng: parseFloat(form.lng.value) || null,
     });
+    addMyPost(newId);
     form.reset();
     document.getElementById('pin-status-lost').textContent = 'No location selected yet.';
     document.getElementById('pin-status-lost').style.color = '#888';
@@ -971,7 +1007,7 @@ async function submitFoundForm(e) {
     ]);
     const locParts = [form.location?.value, form.state?.value, form.country?.value].filter(Boolean);
     const timeSeen = form.time_seen?.value;
-    await savePet({
+    const newId = await savePet({
       type: 'found', owner_name: form.finderName.value, phone: phone || '',
       email: email || '', phone_hidden: !!form.phone_hidden?.checked,
       pet_name: 'Unknown', animal: form.animal.value, breed: '',
@@ -983,6 +1019,7 @@ async function submitFoundForm(e) {
       reward: false,
       lat: parseFloat(form.lat.value) || null, lng: parseFloat(form.lng.value) || null,
     });
+    addMyPost(newId);
     form.reset();
     document.getElementById('pin-status-found').textContent = 'No location selected yet.';
     document.getElementById('pin-status-found').style.color = '#888';

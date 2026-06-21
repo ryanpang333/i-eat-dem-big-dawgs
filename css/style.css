@@ -575,6 +575,12 @@ footer a {
   border-color: #2e7d32;
   color: #1b5e20;
 }
+.btn-delete {
+  background: #fde8e8;
+  border-color: #c62828;
+  color: #b71c1c;
+}
+.btn-delete:hover { background: #fbd0d0; }
 .btn-reunited:hover { background: #c8e6c9; }
 
 /* REUNITED CARD */
