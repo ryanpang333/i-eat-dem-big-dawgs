@@ -679,6 +679,22 @@ footer a {
 .country-btn:hover { background: rgba(255,255,255,0.5); }
 .user-chip { background: rgba(255,255,255,0.32); border-color: rgba(255,255,255,0.6); }
 .user-chip:hover { background: rgba(255,255,255,0.5); }
+.lang-btn { background: rgba(255,255,255,0.32); border-color: rgba(255,255,255,0.6); }
+.lang-btn:hover { background: rgba(255,255,255,0.5); }
+.lang-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.lang-opt {
+  padding: 12px 10px;
+  border: 2px solid #fed7aa;
+  background: #fff7ed;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: bold;
+  color: #7c3a12;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.lang-opt:hover { background: #ffedd5; }
+.lang-opt.active { background: #f97316; color: #fff; border-color: #f97316; }
 
 /* LOGIN / SIGN-UP PAGE */
 .auth-wrap {

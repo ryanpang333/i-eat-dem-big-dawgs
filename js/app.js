@@ -775,9 +775,14 @@ function setupPhotoInput(cameraBtnId, galleryId, previewId) {
 function initLocationPicker(mapDivId, latInputId, lngInputId, statusId) {
   const mapDiv = document.getElementById(mapDivId);
   if (!mapDiv) return;
-  const pickerMap = L.map(mapDivId).setView([20, 0], 2);
+  const pickerMap = L.map(mapDivId, {
+    minZoom: 2,
+    maxBounds: [[-85, -180], [85, 180]],
+    maxBoundsViscosity: 1.0,
+  }).setView([20, 0], 2);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap contributors'
+    attribution: '© OpenStreetMap contributors',
+    noWrap: true,
   }).addTo(pickerMap);
   let marker = null;
   if (navigator.geolocation) {
@@ -909,9 +914,14 @@ let allMapPets = [];
 
 async function initMap() {
   if (!document.getElementById('map')) return;
-  mapInstance = L.map('map').setView([20, 0], 2);
+  mapInstance = L.map('map', {
+    minZoom: 2,
+    maxBounds: [[-85, -180], [85, 180]],
+    maxBoundsViscosity: 1.0,
+  }).setView([20, 0], 2);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap contributors'
+    attribution: '© OpenStreetMap contributors',
+    noWrap: true,
   }).addTo(mapInstance);
 
   allMapPets = (await getPets()).filter(p => p.lat && p.lng);

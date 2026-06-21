@@ -76,7 +76,7 @@
   <div id="game-memory" class="game-panel">
     <h2>🃏 Memory Match</h2>
     <p>Flip the cards and find all the matching pairs!</p>
-    <div class="game-scorebar"><span id="memo-status">Moves: 0</span></div>
+    <div class="game-scorebar"><span id="memo-status">Moves: 0</span><span id="memo-best">Best: —</span></div>
     <div class="memo-board" id="memo-board"></div>
     <button class="submit-btn" style="max-width:220px;margin:20px auto 0;" onclick="startMemory()">🔄 New Game</button>
   </div>
@@ -85,7 +85,7 @@
   <div id="game-pop" class="game-panel">
     <h2>🐾 Paw Pop</h2>
     <p>Tap the paw before it disappears! How many can you get in 20 seconds?</p>
-    <div class="game-scorebar"><span id="pop-score">Score: 0</span><span id="pop-time">Time: 20</span></div>
+    <div class="game-scorebar"><span id="pop-score">Score: 0</span><span id="pop-time">Time: 20</span><span id="pop-best">Best: 0</span></div>
     <div class="pop-grid" id="pop-grid"></div>
     <button class="submit-btn" style="max-width:220px;margin:20px auto 0;" onclick="startPop()">▶️ Start</button>
   </div>
@@ -95,6 +95,7 @@
     <h2>⭕ Tic-Tac-Toe</h2>
     <p>You are 🐾 — beat the computer 🦴! Get three in a row.</p>
     <div class="game-scorebar"><span id="ttt-status">Your turn! You are 🐾</span></div>
+    <div class="game-scorebar"><span id="ttt-record">Wins: 0 · Losses: 0 · Ties: 0</span></div>
     <div class="ttt-grid" id="ttt-grid"></div>
     <button class="submit-btn" style="max-width:220px;margin:20px auto 0;" onclick="startTTT()">🔄 New Game</button>
   </div>
@@ -107,6 +108,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="js/supabase-config.js"></script>
 <script src="js/auth.js"></script>
+<script src="js/i18n.js"></script>
 <script src="js/app.js"></script>
 <script>
 // ── Tab switching ──────────────────────────────────────────
@@ -116,7 +118,28 @@ function showGame(id) {
   document.getElementById('game-' + id).style.display = 'block';
   document.getElementById('tab-' + id).classList.add('active');
   if (id === 'memory') startMemory();
+  if (id === 'pop') updatePopBest();
   if (id === 'ttt') startTTT();
+}
+
+// ── High scores (saved in this browser) ────────────────────
+function getHS(key, def) {
+  const raw = localStorage.getItem(key);
+  return raw === null ? def : JSON.parse(raw);
+}
+function setHS(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+
+function updateMemoBest() {
+  const b = getHS('pawfinder_hs_memory', null);
+  document.getElementById('memo-best').textContent = b !== null ? 'Best: ' + b + ' moves' : 'Best: —';
+}
+function updatePopBest() {
+  document.getElementById('pop-best').textContent = 'Best: ' + getHS('pawfinder_hs_pop', 0);
+}
+function updateTTTRecord() {
+  const r = getHS('pawfinder_ttt', { w: 0, l: 0, t: 0 });
+  document.getElementById('ttt-record').textContent =
+    'Wins: ' + r.w + ' · Losses: ' + r.l + ' · Ties: ' + r.t;
 }
 
 // ── Memory Match ───────────────────────────────────────────
@@ -128,6 +151,7 @@ function startMemory() {
   const deck = [...MEMO_EMOJIS, ...MEMO_EMOJIS].sort(() => Math.random() - 0.5);
   memo = { first: null, lock: false, matched: 0, moves: 0 };
   document.getElementById('memo-status').textContent = 'Moves: 0';
+  updateMemoBest();
   board.innerHTML = deck.map(e =>
     `<button class="memo-card" data-emoji="${e}" onclick="flipMemo(this)"></button>`
   ).join('');
@@ -147,7 +171,14 @@ function flipMemo(card) {
     memo.first = null;
     memo.matched++;
     if (memo.matched === MEMO_EMOJIS.length) {
-      document.getElementById('memo-status').textContent = '🎉 You won in ' + memo.moves + ' moves!';
+      const best = getHS('pawfinder_hs_memory', null);
+      let msg = '🎉 You won in ' + memo.moves + ' moves!';
+      if (best === null || memo.moves < best) {
+        setHS('pawfinder_hs_memory', memo.moves);
+        msg += ' 🏆 New best!';
+      }
+      document.getElementById('memo-status').textContent = msg;
+      updateMemoBest();
     }
   } else {
     memo.lock = true;
@@ -170,6 +201,7 @@ function startPop() {
   pop = { score: 0, time: 20, timer: null, spawn: null, active: -1 };
   document.getElementById('pop-score').textContent = 'Score: 0';
   document.getElementById('pop-time').textContent = 'Time: 20';
+  updatePopBest();
   document.getElementById('pop-grid').innerHTML =
     Array.from({ length: 9 }, (_, i) => `<button class="pop-hole" onclick="whack(${i})"></button>`).join('');
   pop.timer = setInterval(() => {
@@ -205,7 +237,13 @@ function endPop() {
   clearTimeout(pop.spawn);
   document.querySelectorAll('.pop-hole').forEach(h => { h.classList.remove('up'); h.textContent = ''; });
   document.getElementById('pop-time').textContent = "Time's up!";
-  document.getElementById('pop-score').textContent = 'Final score: ' + pop.score + ' 🎉';
+  let msg = 'Final score: ' + pop.score + ' 🎉';
+  if (pop.score > getHS('pawfinder_hs_pop', 0)) {
+    setHS('pawfinder_hs_pop', pop.score);
+    msg += ' 🏆 New best!';
+  }
+  document.getElementById('pop-score').textContent = msg;
+  updatePopBest();
 }
 
 // ── Tic-Tac-Toe ────────────────────────────────────────────
@@ -216,6 +254,7 @@ function startTTT() {
   tttBoard = Array(9).fill('');
   tttOver = false;
   document.getElementById('ttt-status').textContent = 'Your turn! You are 🐾';
+  updateTTTRecord();
   renderTTT();
 }
 
@@ -232,14 +271,14 @@ function playTTT(i) {
   if (tttOver || tttBoard[i]) return;
   tttBoard[i] = '🐾';
   renderTTT();
-  if (tttWin('🐾')) return endTTT('🎉 You win!');
-  if (tttBoard.every(Boolean)) return endTTT("It's a tie!");
+  if (tttWin('🐾')) return endTTT('🎉 You win!', 'win');
+  if (tttBoard.every(Boolean)) return endTTT("It's a tie!", 'tie');
   // Computer's move
   const move = bestMove();
   tttBoard[move] = '🦴';
   renderTTT();
-  if (tttWin('🦴')) return endTTT('🦴 Computer wins! Try again.');
-  if (tttBoard.every(Boolean)) return endTTT("It's a tie!");
+  if (tttWin('🦴')) return endTTT('🦴 Computer wins! Try again.', 'lose');
+  if (tttBoard.every(Boolean)) return endTTT("It's a tie!", 'tie');
 }
 
 function bestMove() {
@@ -258,9 +297,17 @@ function bestMove() {
   return empty[Math.floor(Math.random() * empty.length)];
 }
 
-function endTTT(msg) {
+function endTTT(msg, result) {
   tttOver = true;
   document.getElementById('ttt-status').textContent = msg;
+  if (result) {
+    const r = getHS('pawfinder_ttt', { w: 0, l: 0, t: 0 });
+    if (result === 'win') r.w++;
+    else if (result === 'lose') r.l++;
+    else r.t++;
+    setHS('pawfinder_ttt', r);
+  }
+  updateTTTRecord();
 }
 
 // Show the first game when the page loads.
