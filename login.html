@@ -2,10 +2,80 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="refresh" content="0;url=index.html">
-  <title>Redirecting — Paw Finder</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐾</text></svg>">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In — Paw Finder</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#f97316">
 </head>
-<body>
-  <p>Redirecting to <a href="index.html">home</a>...</p>
+<body data-page="login">
+
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-logo">🐾</div>
+    <h1>Paw Finder</h1>
+    <p class="auth-sub">Sign in to help reunite lost pets.</p>
+
+    <div class="auth-tabs">
+      <button id="tab-login" class="auth-tab active" onclick="showTab('login')">Log In</button>
+      <button id="tab-signup" class="auth-tab" onclick="showTab('signup')">Sign Up</button>
+    </div>
+
+    <form id="login-form" class="auth-form">
+      <input type="text" id="login-user" placeholder="Username" autocomplete="username">
+      <input type="password" id="login-pass" placeholder="Password" autocomplete="current-password">
+      <button type="submit" class="submit-btn">Log In →</button>
+      <p class="auth-msg" id="login-msg"></p>
+    </form>
+
+    <form id="signup-form" class="auth-form" style="display:none;">
+      <input type="text" id="signup-user" placeholder="Choose a username" autocomplete="username">
+      <input type="password" id="signup-pass" placeholder="Choose a password" autocomplete="new-password">
+      <p class="auth-hint">Password must be 8–32 characters and include both letters and numbers.</p>
+      <input type="password" id="signup-pass2" placeholder="Repeat password" autocomplete="new-password">
+      <button type="submit" class="submit-btn">Create Account →</button>
+      <p class="auth-msg" id="signup-msg"></p>
+    </form>
+  </div>
+  <p class="auth-note">🔒 This is a school-project login — please don't use a real password.</p>
+</div>
+
+<script src="js/auth.js"></script>
+<script>
+  function showTab(t) {
+    const login = t === 'login';
+    document.getElementById('login-form').style.display = login ? 'flex' : 'none';
+    document.getElementById('signup-form').style.display = login ? 'none' : 'flex';
+    document.getElementById('tab-login').classList.toggle('active', login);
+    document.getElementById('tab-signup').classList.toggle('active', !login);
+  }
+
+  document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('login-msg');
+    msg.textContent = '';
+    try {
+      await pawfinderAuth.logIn(
+        document.getElementById('login-user').value,
+        document.getElementById('login-pass').value
+      );
+      location.href = 'index.html';
+    } catch (err) { msg.textContent = '⚠ ' + err.message; }
+  });
+
+  document.getElementById('signup-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('signup-msg');
+    msg.textContent = '';
+    const p1 = document.getElementById('signup-pass').value;
+    const p2 = document.getElementById('signup-pass2').value;
+    if (p1 !== p2) { msg.textContent = '⚠ Passwords do not match.'; return; }
+    try {
+      await pawfinderAuth.signUp(document.getElementById('signup-user').value, p1);
+      location.href = 'index.html';
+    } catch (err) { msg.textContent = '⚠ ' + err.message; }
+  });
+</script>
 </body>
 </html>

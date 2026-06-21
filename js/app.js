@@ -16,6 +16,13 @@ async function getPets() {
     real = JSON.parse(localStorage.getItem('pawfinder_pets') || '[]').reverse();
   }
   let combined = [...real, ...demo];
+  // Apply pets the user marked "Reunited!" so the change sticks across reloads.
+  const reunitedIds = new Set(JSON.parse(localStorage.getItem('pawfinder_reunited_ids') || '[]'));
+  if (reunitedIds.size) {
+    combined = combined.map(p =>
+      reunitedIds.has(String(p.id)) ? { ...p, reunited: true, status: 'reunited' } : p
+    );
+  }
   // Filter to the chosen country. Real user posts (no country field) always show.
   if (_selectedCountry) {
     combined = combined.filter(p => !p.country || p.country === _selectedCountry);
@@ -47,11 +54,9 @@ async function uploadPhoto(file) {
 async function loadCounter() {
   const el = document.getElementById('reunited-count');
   if (!el) return;
-  // Count the real reunited pets (respects the chosen country) plus any the user marked.
+  // Count the real reunited pets (respects the chosen country + any the user marked).
   const pets = await getPets();
-  const base = pets.filter(p => p.reunited || p.status === 'reunited').length;
-  const bonus = parseInt(localStorage.getItem('pawfinder_reunited_bonus') || '0');
-  const target = base + bonus;
+  const target = pets.filter(p => p.reunited || p.status === 'reunited').length;
   const duration = 1200;
   const startTime = performance.now();
   (function tick(now) {
@@ -467,9 +472,23 @@ async function toggleShelters(show) {
 async function markReunited(key, btn) {
   if (!confirm('Mark this pet as reunited? 🎉')) return;
   const pet = petStore.get(key);
-  if (DB_READY && pet?.id) {
-    const { error } = await supabaseClient.from('pets').update({ status: 'reunited' }).eq('id', pet.id);
-    if (error) { alert('Could not update: ' + error.message); return; }
+  // Try to save to the database, but don't block reuniting if the table
+  // has no "status" column — we always fall back to saving it locally.
+  if (DB_READY && pet?.id && !String(pet.id).startsWith('demo-')) {
+    try {
+      const { error } = await supabaseClient.from('pets').update({ status: 'reunited' }).eq('id', pet.id);
+      if (error) console.warn('Reunited not saved to database:', error.message);
+    } catch (err) {
+      console.warn('Reunited not saved to database:', err.message);
+    }
+  }
+  // Remember this pet so it stays reunited after a reload (see getPets).
+  if (pet?.id) {
+    const ids = JSON.parse(localStorage.getItem('pawfinder_reunited_ids') || '[]');
+    if (!ids.includes(String(pet.id))) {
+      ids.push(String(pet.id));
+      localStorage.setItem('pawfinder_reunited_ids', JSON.stringify(ids));
+    }
   }
   const card = btn.closest('.card');
   card.classList.add('card-reunited');
@@ -477,8 +496,8 @@ async function markReunited(key, btn) {
     card.insertAdjacentHTML('afterbegin', '<div class="reunited-banner">🎉 REUNITED!</div>');
   }
   btn.remove();
-  const bonus = parseInt(localStorage.getItem('pawfinder_reunited_bonus') || '0') + 1;
-  localStorage.setItem('pawfinder_reunited_bonus', bonus);
+  const spotted = card.querySelector('.btn-spotted');
+  if (spotted) spotted.remove();
   const el = document.getElementById('reunited-count');
   if (el) el.textContent = (parseInt(el.textContent) || 0) + 1;
 }
