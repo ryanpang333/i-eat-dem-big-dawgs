@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐾</text></svg>">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bored? Play Games — Paw Finder</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#f97316">
+  <style>
+    .game-tabs { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-bottom:24px; }
+    .game-tab { padding:10px 18px; border:2px solid #fed7aa; background:#fff7ed; color:#9a6a3a;
+      border-radius:10px; font-size:1rem; font-weight:bold; cursor:pointer; transition:all .2s; }
+    .game-tab.active { background:#f97316; color:#fff; border-color:#f97316; }
+    .game-panel { display:none; text-align:center; }
+    .game-panel h2 { margin-top:0; }
+    .game-scorebar { display:flex; gap:18px; justify-content:center; font-weight:bold;
+      color:#c2410c; margin:10px 0 16px; font-size:1.05rem; }
+
+    /* Memory Match */
+    .memo-board { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; max-width:360px; margin:0 auto; }
+    .memo-card { aspect-ratio:1; font-size:2rem; border:none; border-radius:12px; cursor:pointer;
+      background:#f97316; display:flex; align-items:center; justify-content:center; transition:background .2s; }
+    .memo-card::after { content:'❓'; }
+    .memo-card.flipped, .memo-card.matched { background:#fff7ed; border:2px solid #fed7aa; }
+    .memo-card.flipped::after, .memo-card.matched::after { content:attr(data-emoji); }
+    .memo-card.matched { background:#dcfce7; border-color:#16a34a; cursor:default; }
+
+    /* Paw Pop */
+    .pop-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; max-width:320px; margin:0 auto; }
+    .pop-hole { aspect-ratio:1; font-size:2.4rem; border:none; border-radius:50%; cursor:pointer;
+      background:#8b5e34; box-shadow:inset 0 -6px 0 rgba(0,0,0,0.2); transition:transform .1s; }
+    .pop-hole.up { background:#a97c50; }
+    .pop-hole:active { transform:scale(0.92); }
+
+    /* Tic-Tac-Toe */
+    .ttt-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; max-width:280px; margin:0 auto; }
+    .ttt-cell { aspect-ratio:1; font-size:2.4rem; border:none; border-radius:10px; cursor:pointer;
+      background:#fff7ed; border:2px solid #fed7aa; }
+    .ttt-cell:hover { background:#ffedd5; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="logo" href="index.html">🐾 Paw Finder</a>
+  <ul>
+    <li><a href="index.html">Home</a></li>
+    <li><a href="post-lost.html">Lost a Pet</a></li>
+    <li><a href="found-pet.html">Found a Pet</a></li>
+    <li><a href="browse.html">Browse</a></li>
+    <li><a href="tips.html">Tips</a></li>
+    <li><a href="success-stories.html">Success Stories</a></li>
+    <li><a href="map.html">Map</a></li>
+    <li><a href="stats.html">📊 Stats</a></li>
+    <li><a href="games.html">🎮 Bored?</a></li>
+    <li><a href="about.html">About</a></li>
+    <li><a href="contact.html">Contact</a></li>
+  </ul>
+</nav>
+
+<div class="page-header">
+  <h1>🎮 Bored? Play a Game!</h1>
+  <p>Take a little break with some pet-themed games.</p>
+</div>
+
+<div class="section">
+  <div class="game-tabs">
+    <button id="tab-memory" class="game-tab active" onclick="showGame('memory')">🃏 Memory Match</button>
+    <button id="tab-pop" class="game-tab" onclick="showGame('pop')">🐾 Paw Pop</button>
+    <button id="tab-ttt" class="game-tab" onclick="showGame('ttt')">⭕ Tic-Tac-Toe</button>
+  </div>
+
+  <!-- MEMORY MATCH -->
+  <div id="game-memory" class="game-panel">
+    <h2>🃏 Memory Match</h2>
+    <p>Flip the cards and find all the matching pairs!</p>
+    <div class="game-scorebar"><span id="memo-status">Moves: 0</span></div>
+    <div class="memo-board" id="memo-board"></div>
+    <button class="submit-btn" style="max-width:220px;margin:20px auto 0;" onclick="startMemory()">🔄 New Game</button>
+  </div>
+
+  <!-- PAW POP -->
+  <div id="game-pop" class="game-panel">
+    <h2>🐾 Paw Pop</h2>
+    <p>Tap the paw before it disappears! How many can you get in 20 seconds?</p>
+    <div class="game-scorebar"><span id="pop-score">Score: 0</span><span id="pop-time">Time: 20</span></div>
+    <div class="pop-grid" id="pop-grid"></div>
+    <button class="submit-btn" style="max-width:220px;margin:20px auto 0;" onclick="startPop()">▶️ Start</button>
+  </div>
+
+  <!-- TIC-TAC-TOE -->
+  <div id="game-ttt" class="game-panel">
+    <h2>⭕ Tic-Tac-Toe</h2>
+    <p>You are 🐾 — beat the computer 🦴! Get three in a row.</p>
+    <div class="game-scorebar"><span id="ttt-status">Your turn! You are 🐾</span></div>
+    <div class="ttt-grid" id="ttt-grid"></div>
+    <button class="submit-btn" style="max-width:220px;margin:20px auto 0;" onclick="startTTT()">🔄 New Game</button>
+  </div>
+</div>
+
+<footer>
+  <p>© 2026 Paw Finder — Made by Ryan | <a href="contact.html" style="color:#ffb300;">Contact Us</a></p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<script>
+// ── Tab switching ──────────────────────────────────────────
+function showGame(id) {
+  document.querySelectorAll('.game-panel').forEach(p => p.style.display = 'none');
+  document.querySelectorAll('.game-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('game-' + id).style.display = 'block';
+  document.getElementById('tab-' + id).classList.add('active');
+  if (id === 'memory') startMemory();
+  if (id === 'ttt') startTTT();
+}
+
+// ── Memory Match ───────────────────────────────────────────
+const MEMO_EMOJIS = ['🐶','🐱','🐰','🐦','🐹','🐢'];
+let memo = { first: null, lock: false, matched: 0, moves: 0 };
+
+function startMemory() {
+  const board = document.getElementById('memo-board');
+  const deck = [...MEMO_EMOJIS, ...MEMO_EMOJIS].sort(() => Math.random() - 0.5);
+  memo = { first: null, lock: false, matched: 0, moves: 0 };
+  document.getElementById('memo-status').textContent = 'Moves: 0';
+  board.innerHTML = deck.map(e =>
+    `<button class="memo-card" data-emoji="${e}" onclick="flipMemo(this)"></button>`
+  ).join('');
+}
+
+function flipMemo(card) {
+  if (memo.lock || card.classList.contains('flipped') || card.classList.contains('matched')) return;
+  card.classList.add('flipped');
+  if (!memo.first) { memo.first = card; return; }
+
+  memo.moves++;
+  document.getElementById('memo-status').textContent = 'Moves: ' + memo.moves;
+
+  if (memo.first.dataset.emoji === card.dataset.emoji) {
+    memo.first.classList.add('matched');
+    card.classList.add('matched');
+    memo.first = null;
+    memo.matched++;
+    if (memo.matched === MEMO_EMOJIS.length) {
+      document.getElementById('memo-status').textContent = '🎉 You won in ' + memo.moves + ' moves!';
+    }
+  } else {
+    memo.lock = true;
+    const a = memo.first, b = card;
+    memo.first = null;
+    setTimeout(() => {
+      a.classList.remove('flipped');
+      b.classList.remove('flipped');
+      memo.lock = false;
+    }, 800);
+  }
+}
+
+// ── Paw Pop (whack-a-mole) ─────────────────────────────────
+let pop = { score: 0, time: 20, timer: null, spawn: null, active: -1 };
+
+function startPop() {
+  clearInterval(pop.timer);
+  clearTimeout(pop.spawn);
+  pop = { score: 0, time: 20, timer: null, spawn: null, active: -1 };
+  document.getElementById('pop-score').textContent = 'Score: 0';
+  document.getElementById('pop-time').textContent = 'Time: 20';
+  document.getElementById('pop-grid').innerHTML =
+    Array.from({ length: 9 }, (_, i) => `<button class="pop-hole" onclick="whack(${i})"></button>`).join('');
+  pop.timer = setInterval(() => {
+    pop.time--;
+    document.getElementById('pop-time').textContent = 'Time: ' + pop.time;
+    if (pop.time <= 0) endPop();
+  }, 1000);
+  spawnPop();
+}
+
+function spawnPop() {
+  const holes = document.querySelectorAll('.pop-hole');
+  holes.forEach(h => { h.classList.remove('up'); h.textContent = ''; });
+  const idx = Math.floor(Math.random() * 9);
+  pop.active = idx;
+  holes[idx].classList.add('up');
+  holes[idx].textContent = '🐾';
+  pop.spawn = setTimeout(spawnPop, 650 + Math.random() * 500);
+}
+
+function whack(i) {
+  if (i !== pop.active) return;
+  pop.score++;
+  document.getElementById('pop-score').textContent = 'Score: ' + pop.score;
+  pop.active = -1;
+  const h = document.querySelectorAll('.pop-hole')[i];
+  h.classList.remove('up');
+  h.textContent = '✅';
+}
+
+function endPop() {
+  clearInterval(pop.timer);
+  clearTimeout(pop.spawn);
+  document.querySelectorAll('.pop-hole').forEach(h => { h.classList.remove('up'); h.textContent = ''; });
+  document.getElementById('pop-time').textContent = "Time's up!";
+  document.getElementById('pop-score').textContent = 'Final score: ' + pop.score + ' 🎉';
+}
+
+// ── Tic-Tac-Toe ────────────────────────────────────────────
+let tttBoard = [], tttOver = false;
+const TTT_LINES = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+
+function startTTT() {
+  tttBoard = Array(9).fill('');
+  tttOver = false;
+  document.getElementById('ttt-status').textContent = 'Your turn! You are 🐾';
+  renderTTT();
+}
+
+function renderTTT() {
+  document.getElementById('ttt-grid').innerHTML =
+    tttBoard.map((c, i) => `<button class="ttt-cell" onclick="playTTT(${i})">${c}</button>`).join('');
+}
+
+function tttWin(p) {
+  return TTT_LINES.some(line => line.every(i => tttBoard[i] === p));
+}
+
+function playTTT(i) {
+  if (tttOver || tttBoard[i]) return;
+  tttBoard[i] = '🐾';
+  renderTTT();
+  if (tttWin('🐾')) return endTTT('🎉 You win!');
+  if (tttBoard.every(Boolean)) return endTTT("It's a tie!");
+  // Computer's move
+  const move = bestMove();
+  tttBoard[move] = '🦴';
+  renderTTT();
+  if (tttWin('🦴')) return endTTT('🦴 Computer wins! Try again.');
+  if (tttBoard.every(Boolean)) return endTTT("It's a tie!");
+}
+
+function bestMove() {
+  const empty = tttBoard.map((c, i) => c ? null : i).filter(i => i !== null);
+  // 1. Win if possible, 2. block the player, 3. take centre, 4. a corner, 5. anything
+  for (const p of ['🦴', '🐾']) {
+    for (const i of empty) {
+      const copy = [...tttBoard];
+      copy[i] = p;
+      if (TTT_LINES.some(line => line.every(x => copy[x] === p))) return i;
+    }
+  }
+  if (empty.includes(4)) return 4;
+  const corners = [0, 2, 6, 8].filter(i => empty.includes(i));
+  if (corners.length) return corners[Math.floor(Math.random() * corners.length)];
+  return empty[Math.floor(Math.random() * empty.length)];
+}
+
+function endTTT(msg) {
+  tttOver = true;
+  document.getElementById('ttt-status').textContent = msg;
+}
+
+// Show the first game when the page loads.
+showGame('memory');
+</script>
+</body>
+</html>
