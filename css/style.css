@@ -538,6 +538,13 @@ footer a {
   cursor: not-allowed;
   opacity: 0.8;
 }
+.flyer-btn {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  padding: 12px;
+  font-size: 1rem;
+}
 [data-theme="dark"] .intersection-box { background: #2a2a3a; border-color: #44445a; }
 [data-theme="dark"] .intersection-row input { background: #1e1e2a; border-color: #44445a; color: #eee; }
 

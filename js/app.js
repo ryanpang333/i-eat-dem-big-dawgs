@@ -277,36 +277,77 @@ function sharePost(key) {
   }
 }
 
-function printFlyer(key) {
-  const pet = petStore.get(key);
-  if (!pet) return;
+// Build + open a printable flyer poster for any pet-shaped object.
+function openFlyer(pet) {
   const color = pet.type === 'lost' ? '#c62828' : '#1b5e20';
-  const img = (pet.photo_url || pet.photo) ? `<img src="${pet.photo_url || pet.photo}" style="max-width:280px;border-radius:10px;margin:16px auto;display:block;">` : '';
+  const photo = pet.photo_url || pet.photo;
+  const img = photo ? `<img src="${photo}" style="max-width:300px;max-height:300px;border-radius:10px;margin:16px auto;display:block;object-fit:cover;">` : '';
+  const phoneHidden = !!pet.phone_hidden;
+  const phone = pet.phone || '';
+  const email = pet.email || '';
+  let contactBox = '';
+  if (!phoneHidden && phone) contactBox += `<div class="phone">📞 ${escHtml(phone)}</div>`;
+  if (email) contactBox += `<div class="email">📧 ${escHtml(email)}</div>`;
+  if (phoneHidden && !email) contactBox += `<div class="info">Contact via 🐾 Paw Finder</div>`;
+
   const w = window.open('', '_blank');
+  if (!w) { alert('Please allow pop-ups to print the flyer.'); return; }
   w.document.write(`<!DOCTYPE html><html><head><title>Paw Finder Flyer</title><style>
-    body{font-family:Arial,sans-serif;text-align:center;padding:40px;max-width:520px;margin:0 auto}
-    h1{font-size:2.5rem;color:${color};margin:0}
-    .name{font-size:2rem;font-weight:bold;margin:12px 0}
-    .info{font-size:1.1rem;margin:6px 0;color:#333}
-    .phone{font-size:2rem;font-weight:bold;color:#f97316;margin:24px 0;padding:14px;border:3px solid #f97316;border-radius:8px}
-    .reward{color:#c62828;font-weight:bold;font-size:1.3rem;margin:10px 0}
+    body{font-family:Arial,sans-serif;text-align:center;padding:40px;max-width:560px;margin:0 auto}
+    h1{font-size:2.8rem;color:${color};margin:0;letter-spacing:1px}
+    .name{font-size:2.2rem;font-weight:bold;margin:12px 0}
+    .info{font-size:1.15rem;margin:6px 0;color:#333}
+    .phone{font-size:2rem;font-weight:bold;color:#f97316;margin:20px auto 8px;padding:14px;border:3px solid #f97316;border-radius:8px;max-width:360px}
+    .email{font-size:1.2rem;font-weight:bold;color:#f97316;margin:6px 0}
+    .reward{color:#c62828;font-weight:bold;font-size:1.4rem;margin:12px 0}
     footer{color:#aaa;font-size:0.8rem;margin-top:28px}
+    @media print{.noprint{display:none}}
   </style></head><body>
   <h1>${pet.type === 'lost' ? '🔴 LOST PET' : '🟢 FOUND PET'}</h1>
   <div class="name">${escHtml(pet.pet_name || pet.petName || 'Unknown')}</div>
   ${img}
-  <div class="info"><b>Animal:</b> ${escHtml(pet.animal)}${pet.breed ? ' — ' + escHtml(pet.breed) : ''}</div>
-  <div class="info"><b>Colour:</b> ${escHtml(pet.color)} · <b>Size:</b> ${escHtml(pet.size)}</div>
-  <div class="info"><b>${pet.type === 'lost' ? 'Last seen' : 'Found at'}:</b> ${escHtml(pet.location)}</div>
-  <div class="info"><b>Date:</b> ${escHtml(pet.date)}</div>
+  <div class="info"><b>Animal:</b> ${escHtml(pet.animal || '')}${pet.breed ? ' — ' + escHtml(pet.breed) : ''}</div>
+  <div class="info"><b>Colour:</b> ${escHtml(pet.color || '')} · <b>Size:</b> ${escHtml(pet.size || '')}</div>
+  <div class="info"><b>${pet.type === 'lost' ? 'Last seen' : 'Found at'}:</b> ${escHtml(pet.location || '')}</div>
+  ${pet.date ? `<div class="info"><b>Date:</b> ${escHtml(pet.date)}</div>` : ''}
   ${pet.special ? `<div class="info"><b>Special marks:</b> ${escHtml(pet.special)}</div>` : ''}
   ${pet.reward === true || pet.reward === 'yes' ? '<div class="reward">💰 REWARD OFFERED</div>' : ''}
-  <div class="phone">📞 ${escHtml(pet.phone)}</div>
-  <div class="info">Contact: ${escHtml(pet.owner_name || pet.ownerName)}</div>
+  ${contactBox}
+  <div class="info">Contact: ${escHtml(pet.owner_name || pet.ownerName || '')}</div>
+  <button class="noprint" onclick="window.print()" style="margin-top:20px;padding:12px 28px;background:#f97316;color:#fff;border:none;border-radius:8px;font-size:1rem;font-weight:bold;cursor:pointer;">🖨️ Print this flyer</button>
   <footer>Posted on 🐾 Paw Finder</footer>
-  <script>window.onload=function(){window.print()}<\/script>
   </body></html>`);
   w.document.close();
+}
+
+function printFlyer(key) {
+  const pet = petStore.get(key);
+  if (pet) openFlyer(pet);
+}
+
+// Build a flyer straight from a (not-yet-posted) lost/found form.
+async function flyerFromForm(formId, type) {
+  const form = document.getElementById(formId);
+  if (!form) return;
+  const v = name => (form[name] && form[name].value || '').trim();
+  const locParts = [v('location'), v('state'), v('country')].filter(Boolean);
+  const photoFile = form.photo && form.photo.files[0];
+  const photo = photoFile ? await new Promise(r => {
+    const fr = new FileReader(); fr.onload = e => r(e.target.result); fr.readAsDataURL(photoFile);
+  }) : null;
+  openFlyer({
+    type,
+    pet_name: type === 'lost' ? v('petName') : (v('petName') || 'Unknown'),
+    animal: v('animal'), breed: v('breed'), color: v('color'), size: v('size'),
+    location: locParts.join(', ') || 'Unknown',
+    date: v('date'),
+    special: v('special'),
+    reward: type === 'lost' && v('reward') === 'yes',
+    owner_name: v('ownerName') || v('finderName'),
+    phone: v('phone'), email: v('email'),
+    phone_hidden: !!(form.phone_hidden && form.phone_hidden.checked),
+    photo,
+  });
 }
 
 // ── GALLERY ──────────────────────────────────────────────────────────────────
