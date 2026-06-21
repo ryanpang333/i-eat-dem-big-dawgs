@@ -148,15 +148,15 @@ function renderCard(pet) {
   const sightCount = JSON.parse(localStorage.getItem(`sightings_${petId}`) || '[]').length;
 
   let contactRows = `<p style="margin-top:8px;"><strong>Contact:</strong> ${escHtml(pet.owner_name || pet.ownerName)}</p>`;
-  if (phoneSafe) {
-    contactRows += phonePrivate
-      ? `<p style="font-size:0.85rem;color:#888;margin-top:4px;">📞 <em>Phone hidden by poster</em></p>`
-      : `<p style="font-size:0.85rem;margin-top:4px;">📞 <span id="phone-val-${key}" style="display:none;font-weight:bold;">${phoneSafe}</span><button class="action-btn" id="phone-toggle-${key}" onclick="togglePhone('${key}')">🔒 Show Phone</button></p>`;
+  if (phonePrivate) {
+    contactRows += `<p style="font-size:0.85rem;color:#888;margin-top:4px;">📞 <em>Phone hidden by poster</em></p>`;
+  } else if (phoneSafe) {
+    contactRows += `<p style="font-size:0.85rem;margin-top:4px;">📞 <strong>${phoneSafe}</strong></p>`;
   }
   if (emailSafe) {
-    contactRows += `<p style="font-size:0.85rem;margin-top:4px;">📧 <span id="email-val-${key}" style="display:none;font-weight:bold;">${emailSafe}</span><button class="action-btn" id="email-toggle-${key}" onclick="toggleEmail('${key}')">🔒 Show Email</button></p>`;
+    contactRows += `<p style="font-size:0.85rem;margin-top:4px;">📧 <strong>${emailSafe}</strong></p>`;
   }
-  if (!phoneSafe && !emailSafe) {
+  if (!phonePrivate && !phoneSafe && !emailSafe) {
     contactRows += `<p style="font-size:0.85rem;color:#888;margin-top:4px;"><em>No contact info provided</em></p>`;
   }
 
@@ -168,7 +168,7 @@ function renderCard(pet) {
       ${gallery}
       <span class="badge-${pet.type}">${label}</span>
       <h3>${name}</h3>
-      <p><strong>Animal:</strong> ${escHtml(pet.animal)} ${pet.breed ? '— ' + escHtml(pet.breed) : ''}</p>
+      <p><strong>Animal:</strong> <span>${escHtml(pet.animal)}</span>${pet.breed ? ' — ' + escHtml(pet.breed) : ''}</p>
       <p><strong>Color:</strong> ${escHtml(pet.color)}</p>
       ${pet.age ? `<p><strong>Age:</strong> ${escHtml(pet.age)}</p>` : ''}
       <p><strong>Size:</strong> ${escHtml(pet.size)}</p>
@@ -203,24 +203,6 @@ function renderCard(pet) {
 }
 
 // ── CARD ACTIONS ─────────────────────────────────────────────────────────────
-
-function togglePhone(key) {
-  const val = document.getElementById(`phone-val-${key}`);
-  const btn = document.getElementById(`phone-toggle-${key}`);
-  if (!val || !btn) return;
-  const hidden = val.style.display === 'none';
-  val.style.display = hidden ? 'inline' : 'none';
-  btn.textContent = hidden ? '🔓 Hide Phone' : '🔒 Show Phone';
-}
-
-function toggleEmail(key) {
-  const val = document.getElementById(`email-val-${key}`);
-  const btn = document.getElementById(`email-toggle-${key}`);
-  if (!val || !btn) return;
-  const hidden = val.style.display === 'none';
-  val.style.display = hidden ? 'inline' : 'none';
-  btn.textContent = hidden ? '🔓 Hide Email' : '🔒 Show Email';
-}
 
 function copyPhone(phone, btn) {
   navigator.clipboard.writeText(phone).then(() => {
@@ -417,7 +399,7 @@ function openDetailModal(key) {
       <h2 style="margin:6px 0;">${name}</h2>
       ${days !== null ? `<p style="color:#aaa;font-size:0.85rem;">⏱ ${pet.type==='lost'?'Missing':'Found'} ${days===0?'today':`${days} day${days!==1?'s':''} ago`}</p>` : ''}
       <hr class="modal-hr">
-      <p><strong>Animal:</strong> ${escHtml(pet.animal)}${pet.breed?' — '+escHtml(pet.breed):''}</p>
+      <p><strong>Animal:</strong> <span>${escHtml(pet.animal)}</span>${pet.breed?' — '+escHtml(pet.breed):''}</p>
       <p><strong>Color:</strong> ${escHtml(pet.color)}</p>
       ${pet.age?`<p><strong>Age:</strong> ${escHtml(pet.age)}</p>`:''}
       <p><strong>Size:</strong> ${escHtml(pet.size)}</p>
@@ -427,8 +409,7 @@ function openDetailModal(key) {
       ${pet.reward===true||pet.reward==='yes'?`<p style="color:#c62828;font-weight:bold;">💰 Reward offered!</p>`:''}
       <hr class="modal-hr">
       <p><strong>Contact:</strong> ${escHtml(pet.owner_name||pet.ownerName)}</p>
-      ${pet.phone&&!pet.phone_hidden?`<p>📞 ${escHtml(pet.phone)}</p>`:''}
-      ${pet.phone&&pet.phone_hidden?`<p style="color:#aaa;">📞 Phone private</p>`:''}
+      ${pet.phone_hidden?`<p style="color:#aaa;">📞 Phone private</p>`:(pet.phone?`<p>📞 ${escHtml(pet.phone)}</p>`:'')}
       ${pet.email?`<p>📧 ${escHtml(pet.email)}</p>`:''}
       ${sightings.length?`
         <hr class="modal-hr">
@@ -578,7 +559,8 @@ async function loadReunitedTicker() {
   if (!reunited.length) { ticker.style.display = 'none'; return; }
   const items = reunited.slice(0, 20).map(p => {
     const name = p.pet_name || p.petName || 'Unknown';
-    return `<span class="ticker-item">🎉 <strong>${escHtml(name)}</strong> the ${escHtml(p.animal)} reunited in ${escHtml(p.location.split(',').slice(-1)[0].trim() || p.location)}</span>`;
+    const place = p.location.split(',').slice(-1)[0].trim() || p.location;
+    return `<span class="ticker-item">🎉 <strong>${escHtml(name)}</strong> <span>the ${escHtml(p.animal)}</span> <span>reunited in</span> ${escHtml(place)}</span>`;
   }).join('<span class="ticker-sep">•</span>');
   const inner = ticker.querySelector('.ticker-inner');
   if (inner) { inner.innerHTML = items + '<span class="ticker-sep">•</span>' + items; }
@@ -810,8 +792,9 @@ async function submitLostForm(e) {
   try {
     const phone = form.phone?.value.trim();
     const email = form.email?.value.trim();
-    if (!phone && !email) {
-      alert('Please provide at least a phone number or email so people can contact you.');
+    const phonePrivate = !!form.phone_hidden?.checked;
+    if (!phonePrivate && !phone) {
+      alert('Please enter your phone number — or tick "Keep my phone private" if you don\'t want to share it.');
       btn.textContent = 'Post Lost Pet Notice'; btn.disabled = false;
       return;
     }
@@ -858,8 +841,9 @@ async function submitFoundForm(e) {
   try {
     const phone = form.phone?.value.trim();
     const email = form.email?.value.trim();
-    if (!phone && !email) {
-      alert('Please provide at least a phone number or email so people can contact you.');
+    const phonePrivate = !!form.phone_hidden?.checked;
+    if (!phonePrivate && !phone) {
+      alert('Please enter your phone number — or tick "Keep my phone private" if you don\'t want to share it.');
       btn.textContent = 'Post Found Pet Notice'; btn.disabled = false;
       return;
     }
