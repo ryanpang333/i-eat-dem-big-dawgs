@@ -754,6 +754,20 @@ function setupPhotoInput(cameraBtnId, galleryId, previewId) {
 
 // ── FORMS ────────────────────────────────────────────────────────────────────
 
+const pickerMaps = {};
+
+function setPickerPin(mapDivId, lat, lng, statusId, latInputId, lngInputId, label) {
+  const pm = pickerMaps[mapDivId];
+  if (!pm) return;
+  if (pm.marker) pm.marker.setLatLng([lat, lng]);
+  else pm.marker = L.marker([lat, lng]).addTo(pm.map);
+  document.getElementById(latInputId).value = lat.toFixed(6);
+  document.getElementById(lngInputId).value = lng.toFixed(6);
+  const status = document.getElementById(statusId);
+  status.textContent = label || `📍 Pin dropped! (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+  status.style.color = '#f97316';
+}
+
 function initLocationPicker(mapDivId, latInputId, lngInputId, statusId) {
   const mapDiv = document.getElementById(mapDivId);
   if (!mapDiv) return;
@@ -766,22 +780,77 @@ function initLocationPicker(mapDivId, latInputId, lngInputId, statusId) {
     attribution: '© OpenStreetMap contributors',
     noWrap: true,
   }).addTo(pickerMap);
-  let marker = null;
+  pickerMaps[mapDivId] = { map: pickerMap, marker: null, latInputId, lngInputId, statusId };
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(pos => {
       pickerMap.setView([pos.coords.latitude, pos.coords.longitude], 13);
     });
   }
   pickerMap.on('click', e => {
-    const { lat, lng } = e.latlng;
-    if (marker) marker.setLatLng([lat, lng]);
-    else marker = L.marker([lat, lng]).addTo(pickerMap);
-    document.getElementById(latInputId).value = lat.toFixed(6);
-    document.getElementById(lngInputId).value = lng.toFixed(6);
-    const status = document.getElementById(statusId);
-    status.textContent = `📍 Pin dropped! (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
-    status.style.color = '#f97316';
+    setPickerPin(mapDivId, e.latlng.lat, e.latlng.lng, statusId, latInputId, lngInputId);
   });
+}
+
+// Find where two roads cross using OpenStreetMap's Overpass API, then drop a pin.
+async function searchIntersection(mapDivId, road1Id, road2Id, statusId) {
+  const pm = pickerMaps[mapDivId];
+  if (!pm) return;
+  const road1 = document.getElementById(road1Id).value.trim();
+  const road2 = document.getElementById(road2Id).value.trim();
+  const status = document.getElementById(statusId);
+  if (!road1 || !road2) {
+    status.textContent = '⚠ Please type both road names.';
+    status.style.color = '#c62828';
+    return;
+  }
+  status.innerHTML = '<span class="mini-spinner"></span>Searching for the intersection…';
+  status.style.color = '#888';
+
+  // Search within the area currently shown on the map (south,west,north,east).
+  const b = pm.map.getBounds();
+  const bbox = `${b.getSouth()},${b.getWest()},${b.getNorth()},${b.getEast()}`;
+  const esc = s => s.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  const query = `[out:json][timeout:25];
+    way["highway"]["name"~"${esc(road1)}",i](${bbox})->.a;
+    way["highway"]["name"~"${esc(road2)}",i](${bbox})->.b;
+    node(w.a)->.na;
+    node(w.b)->.nb;
+    node.na.nb;
+    out body 1;`;
+
+  try {
+    const res = await fetch('https://overpass-api.de/api/interpreter', {
+      method: 'POST',
+      body: 'data=' + encodeURIComponent(query),
+    });
+    const data = await res.json();
+    const node = (data.elements || []).find(el => el.type === 'node' && el.lat && el.lon);
+    if (!node) {
+      status.textContent = `❌ Couldn't find where "${road1}" and "${road2}" cross here. Try zooming to the right town, or check the spelling.`;
+      status.style.color = '#c62828';
+      return;
+    }
+    pm.map.setView([node.lat, node.lon], 17);
+    setPickerPin(mapDivId, node.lat, node.lon, statusId, pm.latInputId, pm.lngInputId,
+      `📍 Found the corner of ${road1} & ${road2}! Press “Confirm Location” if this is right.`);
+  } catch {
+    status.textContent = '❌ Could not search right now. Please check your internet and try again.';
+    status.style.color = '#c62828';
+  }
+}
+
+// Confirm the dropped pin is the right spot.
+function confirmLocation(statusId, latInputId, lngInputId) {
+  const status = document.getElementById(statusId);
+  const lat = document.getElementById(latInputId).value;
+  const lng = document.getElementById(lngInputId).value;
+  if (!lat || !lng) {
+    status.textContent = '⚠ Drop a pin or find an intersection first.';
+    status.style.color = '#c62828';
+    return;
+  }
+  status.textContent = `✅ Location confirmed! (${(+lat).toFixed(4)}, ${(+lng).toFixed(4)})`;
+  status.style.color = '#16a34a';
 }
 
 async function submitLostForm(e) {

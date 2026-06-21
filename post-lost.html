@@ -177,6 +177,19 @@
       <input type="hidden" id="lat-lost" name="lat">
       <input type="hidden" id="lng-lost" name="lng">
       <p id="pin-status-lost" style="font-size:0.85rem;color:#888;">No location selected yet.</p>
+
+      <div class="intersection-box">
+        <p style="font-size:0.85rem;color:#666;margin:0 0 8px;">🔍 Or find where two roads cross (zoom the map to your town first):</p>
+        <div class="intersection-row">
+          <input type="text" id="road1-lost" placeholder="First road (e.g. Main St)">
+          <span>✕</span>
+          <input type="text" id="road2-lost" placeholder="Second road (e.g. Oak Ave)">
+        </div>
+        <div class="intersection-actions">
+          <button type="button" class="action-btn" onclick="searchIntersection('location-picker-lost','road1-lost','road2-lost','pin-status-lost')">📍 Find Intersection</button>
+          <button type="button" class="submit-btn" style="width:auto;padding:8px 18px;" onclick="confirmLocation('pin-status-lost','lat-lost','lng-lost')">✅ Confirm Location</button>
+        </div>
+      </div>
     </div>
 
     <div class="when-row">

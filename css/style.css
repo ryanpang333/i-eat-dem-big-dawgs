@@ -492,6 +492,50 @@ footer a {
   border: 2px solid #f97316 !important;
 }
 
+/* ROAD INTERSECTION SEARCH */
+.intersection-box {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-top: 10px;
+}
+.intersection-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.intersection-row input {
+  flex: 1;
+  min-width: 130px;
+  padding: 9px 11px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+.intersection-row span { color: #c2410c; font-weight: bold; }
+.mini-spinner {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  border: 2px solid #fed7aa;
+  border-top-color: #f97316;
+  border-radius: 50%;
+  animation: mini-spin 0.7s linear infinite;
+  vertical-align: -2px;
+  margin-right: 6px;
+}
+@keyframes mini-spin { to { transform: rotate(360deg); } }
+.intersection-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+[data-theme="dark"] .intersection-box { background: #2a2a3a; border-color: #44445a; }
+[data-theme="dark"] .intersection-row input { background: #1e1e2a; border-color: #44445a; color: #eee; }
+
 /* CARD ACTIONS */
 .card-actions {
   display: flex;
